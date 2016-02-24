@@ -240,3 +240,69 @@ dwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1
     .Call('seqmodels_dwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, ln)
 }
 
+#' Distribution Function for the Wald Race Model
+#'
+#' Calculates the joint distribution function for a two choice version
+#' of the Wald race model.
+#'
+#' @param rt a vector of response times (rt > 0).
+#' @param ch a vector of choices (ch = {0,1}).
+#' @param k1 the threshold determining when a decision terminates for
+#'   choices == 1 ( k1 > 0).
+#' @param xi1 the average rate of evidence accumulation within a trial
+#'   for choices == 1 (xi1 > 0).
+#' @param tau1 the residual latency for choices == 1 (tau1 >= 0).
+#' @param k0 the threshold determining when a decision terminates for
+#'   choices == 0 ( k0 > 0).
+#' @param xi0 the average rate of evidence accumulation within a trial
+#'   for choices == 0 (xi0 > 0).
+#' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
+#' @param s0 the within trial variability for choices == 0 (s0 > 0;
+#'   default is 1.0).
+#' @param s1 the within trial variability for choices == 1 (s1 > 0;
+#'   default is 1.0).
+#'
+#' @section Notes:
+#' For unequal vector lengths, values are recycled.
+#'
+#' @return Returns the value(s) for the joint distribution function for
+#' the two-choice version of the Wald race model.
+#'
+#' @export
+pwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0))) {
+    .Call('seqmodels_pwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0)
+}
+
+#' Distribution Function for the Wald Race Model
+#'
+#' Calculates the joint distribution function for a two choice version
+#' of the Wald race model.
+#'
+#' @param rt a vector of response times (rt > 0).
+#' @param ch a vector of choices (ch = {0,1}).
+#' @param k1 the threshold determining when a decision terminates for
+#'   choices == 1 ( k1 > 0).
+#' @param xi1 the average rate of evidence accumulation within a trial
+#'   for choices == 1 (xi1 > 0).
+#' @param tau1 the residual latency for choices == 1 (tau1 >= 0).
+#' @param k0 the threshold determining when a decision terminates for
+#'   choices == 0 ( k0 > 0).
+#' @param xi0 the average rate of evidence accumulation within a trial
+#'   for choices == 0 (xi0 > 0).
+#' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
+#' @param s0 the within trial variability for choices == 0 (s0 > 0;
+#'   default is 1.0).
+#' @param s1 the within trial variability for choices == 1 (s1 > 0;
+#'   default is 1.0).
+#'
+#' @section Notes:
+#' For unequal vector lengths, values are recycled.
+#'
+#' @return Returns the value(s) for the joint distribution function for
+#' the two-choice version of the Wald race model.
+#'
+#' @export
+pwaldrace2 <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), parYes = 0L) {
+    .Call('seqmodels_pwaldrace2', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, parYes)
+}
+

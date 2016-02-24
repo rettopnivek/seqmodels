@@ -3,6 +3,7 @@
 #include <math.h>
 #include <limits>
 #include "gsl/include/gsl_integration.h" // Numerical integration
+#include "gsl/include/gsl_errno.h" // Error handling
 
 using namespace RcppParallel;
 

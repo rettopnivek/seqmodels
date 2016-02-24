@@ -3,6 +3,7 @@
 #include <math.h>
 #include <limits>
 #include "gsl/include/gsl_integration.h" // Numerical integration
+#include "gsl/include/gsl_errno.h" // Error handling
 
 using namespace RcppParallel;
 
@@ -58,12 +59,18 @@ Lookup - 01: wfpt
 Lookup - 02: pr_absorb
 Lookup - 03: dwiener_scl
 Lookup - 04: dw_vxi_scl
-Lookup - 05: dw_vxi
-Lookup - 06: dw_vtheta_scl
-Lookup - 07: dw_vtheta
-Lookup - 08: dw_vxivtheta_scl
-Lookup - 09: dw_vxivtheta
-Lookup - 10: ddiff
+Lookup - 05: dw_vtheta_scl
+Lookup - 06: dw_vtau_scl
+Lookup - 07: dw_var
+Lookup - 08: dw_vxi_vtheta_scl
+Lookup - 09:
+Lookup - 10:
+Lookup - 11:
+Lookup - 12:
+Lookup - 13:
+Lookup - 14:
+Lookup - 14:
+Lookup - 16: ddiff
 
 */
 
@@ -322,9 +329,12 @@ double dw_vtau_scl( double x, void * params) {
 }
 
 // Lookup - 07
-// Numerical integration routine
+// Numerical integration routine for a single parameter with variability
 
 double dw_var(std::vector<double> par, double a,double b, int ver ) {
+
+  // Turn off GSL error handler
+  gsl_set_error_handler_off ();
 
   double result = 0.0;
 
@@ -346,6 +356,9 @@ double dw_var(std::vector<double> par, double a,double b, int ver ) {
     // Free up memory
     gsl_integration_workspace_free (w);
   }
+
+  // Check for illegal values
+  if (result < 0.0) result = 0.0;
 
   return(result);
 }
@@ -371,14 +384,173 @@ double dw_vxi_vtheta_scl( double x, void * params ) {
   // Calculate wiener density with variable drift
   par[3] = x;
   double p1 = dw_var( par, -5.0*par[7] + par[4],
-                      5.0*par[7] + par[4], 1 );
+                      5.0*par[7] + par[4], 2 );
   out = p1*p2;
 
   return out;
 }
 
+// Lookup - 09
+// A scalar version that calculates the function to
+// integrate over when both drift and residual latency vary
 
-// Lookup - 08
+double dw_vxi_vtau_scl( double x, void * params ) {
+
+  // Extract parameters
+  std::vector<double> par = *(std::vector<double> *) params;
+
+  // Initialize output
+  double out = 0.0;
+
+  // Calculate uniform density values
+  double lb = par[5] - par[9]/2.0;
+  double ub = par[5] + par[9]/2.0;
+
+  double p2 = R::dunif(x,lb,ub,0);
+
+  // Calculate wiener density with variable drift
+  par[5] = x;
+  double p1 = dw_var( par, -5.0*par[7] + par[4],
+                      5.0*par[7] + par[4], 2 );
+  out = p1*p2;
+
+  return out;
+}
+
+// Lookup - 10
+// A scalar version that calculates the function to
+// integrate over when both starting point and residual latency vary
+
+double dw_vtheta_vtau_scl( double x, void * params ) {
+
+  // Extract parameters
+  std::vector<double> par = *(std::vector<double> *) params;
+
+  // Initialize output
+  double out = 0.0;
+
+  // Calculate uniform density values
+  double lb = par[5] - par[9]/2.0;
+  double ub = par[5] + par[9]/2.0;
+
+  double p2 = R::dunif(x,lb,ub,0);
+
+  // Calculate wiener density with variable starting point
+  par[5] = x;
+
+  // Calculate uniform density values
+  lb = par[3] - par[8]/2.0;
+  ub = par[3] + par[8]/2.0;
+
+  double p1 = dw_var( par, lb,
+                      ub, 3 );
+  out = p1*p2;
+
+  return out;
+}
+
+// Lookup - 11
+// Numerical integration routine for two parameters with variability
+
+double dw_var2(std::vector<double> par, double a, double b, int ver ) {
+
+  // Turn off GSL error handler
+  gsl_set_error_handler_off ();
+
+  double result = 0.0;
+
+  if ( (ver > 4) && (ver < 8) ) {
+    // Allocate memory
+    gsl_integration_workspace *w = gsl_integration_workspace_alloc(1000);
+
+    double error;
+
+    gsl_function F;
+    if ( ver == 5 ) F.function = &dw_vxi_vtheta_scl;
+    if ( ver == 6 ) F.function = &dw_vxi_vtau_scl;
+    if ( ver == 7 ) F.function = &dw_vtheta_vtau_scl;
+    F.params = &par;
+
+    gsl_integration_qags (&F, a, b, 0, 1e-7, 1000,
+                          w, &result, &error);
+
+    // Free up memory
+    gsl_integration_workspace_free (w);
+  }
+
+  // Check for illegal values
+  if (result < 0.0) result = 0.0;
+
+  return(result);
+}
+
+// Lookup - 12
+// A scalar version that calculates the function to
+// integrate over when drift, starting point, and residual latency all
+// vary
+
+double dw_vxi_vtheta_vtau_scl( double x, void * params ) {
+
+  // Extract parameters
+  std::vector<double> par = *(std::vector<double> *) params;
+
+  // Initialize output
+  double out = 0.0;
+
+  // Calculate uniform density values
+  double lb = par[5] - par[9]/2.0;
+  double ub = par[5] + par[9]/2.0;
+
+  double p2 = R::dunif(x,lb,ub,0);
+
+  // Calculate wiener density with variable drift and starting point
+  par[5] = x;
+
+  // Calculate uniform density values
+  lb = par[3] - par[8]/2.0;
+  ub = par[3] + par[8]/2.0;
+
+  double p1 = dw_var2( par, lb,
+                      ub, 5 );
+  out = p1*p2;
+
+  return out;
+}
+
+// Lookup - 13
+// Numerical integration routine for three parameters with variability
+
+double dw_var3(std::vector<double> par, double a, double b, int ver ) {
+
+  // Turn off GSL error handler
+  gsl_set_error_handler_off ();
+
+  double result = 0.0;
+
+  if ( ver == 8 ) {
+    // Allocate memory
+    gsl_integration_workspace *w = gsl_integration_workspace_alloc(1000);
+
+    double error;
+
+    gsl_function F;
+    F.function = &dw_vxi_vtheta_vtau_scl;
+    F.params = &par;
+
+    gsl_integration_qags (&F, a, b, 0, 1e-7, 1000,
+                          w, &result, &error);
+
+    // Free up memory
+    gsl_integration_workspace_free (w);
+  }
+
+  // Check for illegal values
+  if (result < 0.0) result = 0.0;
+
+  return(result);
+}
+
+// Lookup - 14
 // Overall wrapper function for use with parallelization
 
 double diff_wrapper( std::vector<double> par ) {
@@ -407,10 +579,31 @@ double diff_wrapper( std::vector<double> par ) {
                   par[5] + par[9]/2.0, 4 );
   }
 
+  // Variability in drift and starting point
+  if (ver == 5) {
+    out = dw_var2( par, par[3] - par[8]/2.0,
+                   par[3] + par[8]/2.0, 5 );
+  }
+  // Variability in drift and residual latency
+  if (ver == 6) {
+    out = dw_var2( par, par[5] - par[9]/2.0,
+                  par[5] + par[9]/2.0, 6 );
+  }
+  // Variability in starting point and residual latency
+  if (ver == 7) {
+    out = dw_var2( par, par[5] - par[9]/2.0,
+                  par[5] + par[9]/2.0, 7 );
+  }
+  // Variability in starting point and residual latency
+  if (ver == 8) {
+    out = dw_var3( par, par[5] - par[9]/2.0,
+                   par[5] + par[9]/2.0, 7 );
+  }
+
   return( out );
 }
 
-// Lookup - 06
+// Lookup - 15
 // RcppParallel worker function
 
 struct ddiffWorker : public Worker
@@ -441,7 +634,7 @@ struct ddiffWorker : public Worker
 };
 
 
-// Lookup - ??
+// Lookup - 16
 //' Likelihood for the Ratcliff diffusion model
 //'
 //' Calculates the likelihood or log-likelihood (joint or conditional)
@@ -564,7 +757,7 @@ Rcpp::NumericVector ddiff( Rcpp::NumericVector rt,
     input(nv,8) = stheta(stheta_inc);
     // Fix small values of stheta to 0.0
     if ( input(nv,8) < 1e-4 ) { input(nv,8) = 0.0; }
-    input(nv,9) = stheta(stau_inc);
+    input(nv,9) = stau(stau_inc);
     // Fix small values of stau to 0.0
     if ( input(nv,9) < 1e-4 ) { input(nv,9) = 0.0; }
     input(nv,10) = eps;
@@ -579,10 +772,26 @@ Rcpp::NumericVector ddiff( Rcpp::NumericVector rt,
     if ( (input(nv,7) == 0.0) &&
          (input(nv,8) == 0.0) &&
          (input(nv,9) > 0.0) ) input(nv,11) = 4.0;
+
+    if ( (input(nv,7) > 0.0) &&
+         (input(nv,8) > 0.0) &&
+         (input(nv,9) == 0.0) ) input(nv,11) = 5.0;
+    if ( (input(nv,7) > 0.0) &&
+         (input(nv,8) == 0.0) &&
+         (input(nv,9) > 0.0) ) input(nv,11) = 6.0;
+    if ( (input(nv,7) == 0.0) &&
+         (input(nv,8) > 0.0) &&
+         (input(nv,9) > 0.0) ) input(nv,11) = 7.0;
+
+    if ( (input(nv,7) > 0.0) &&
+         (input(nv,8) > 0.0) &&
+         (input(nv,9) > 0.0) ) input(nv,11) = 8.0;
+
     if ( (input(nv,7) > 10.0) ||
          ( input(nv,3) - (input(nv,8)/2.0 ) <= 0.0 ) ||
          ( input(nv,3) + (input(nv,8)/2.0 ) >= 1.0 ) ||
-         ( input(nv,5) - (input(nv,9)/2.0 ) <= 0.0 ) ) input(nv,11) = 0.0;
+         ( input(nv,5) - (input(nv,9)/2.0 ) <= 0.0 ) )
+      input(nv,11) = 0.0;
 
     rt_inc = rt_inc + 1;
     ch_inc = ch_inc + 1;
@@ -620,11 +829,11 @@ Rcpp::NumericVector ddiff( Rcpp::NumericVector rt,
 
   } else {
 
-    // function call operator that works for the specified
+    // Function call operator that works for the specified
     // range (begin/end)
     ddiffWorker mt(input, output);
 
-    // call parallelFor to do the work
+    // Call parallelFor to do the work
     parallelFor(0, N, mt);
   }
 

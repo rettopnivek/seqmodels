@@ -1,7 +1,11 @@
+#include <RcppParallel.h>
 #include <Rcpp.h>  // Includes certain libraries of functions
 #include <math.h>
 #include <limits>
 #include "gsl/include/gsl_integration.h" // Numerical integration
+#include "gsl/include/gsl_errno.h" // Error handling
+
+using namespace RcppParallel;
 
 /*
 Purpose:
@@ -652,3 +656,382 @@ Rcpp::NumericVector dwaldrace (Rcpp::NumericVector rt,
 
   return ( out );
 }
+
+// Lookup - 10
+// A variant of the scalar version of the density function to
+// integrate over.
+
+double int_dwaldrace_scl( double x, void * params) {
+
+  // Extract parameters
+  std::vector<double> par = *(std::vector<double> *) params;
+
+  // Initialize output
+  double out = 0.0;
+
+  // Calculate the density for the Wald race model
+  out = dwaldrace_scl( x, par[0], par[1], par[2],
+                       par[3], par[4], par[5], par[6],
+                       par[7], par[8], 0 );
+
+  return out;
+}
+
+// Lookup - 11
+// A function that numerically integrates the density function in
+// order to determine the distribution function.
+
+double pwaldrace_scl(std::vector<double> par,
+                     double a,double b) {
+
+  // Turn off GSL error handler
+  gsl_set_error_handler_off ();
+
+  double result = 0.0;
+
+  if ( a >= 0.0 ) {
+
+    // Allocate memory
+    gsl_integration_workspace *w = gsl_integration_workspace_alloc(1000);
+
+    double error;
+
+    gsl_function F;
+    F.function = &int_dwaldrace_scl;
+    F.params = &par;
+
+    // If the upper boundary is infinite
+    if ( b == R_PosInf ) {
+      gsl_integration_qagiu (&F, a, 0, 1e-7, 1000,
+                             w, &result, &error);
+    } else {
+      gsl_integration_qags (&F, a, b, 0, 1e-7, 1000,
+                            w, &result, &error);
+    }
+
+    // Free up memory
+    gsl_integration_workspace_free (w);
+
+  }
+
+  // Check for illegal values
+  if (result < 0.0) result = 0.0;
+  if (result > 1.0) result = 0.0;
+
+  return(result);
+}
+
+// Lookup - 12
+// RcppParallel worker function
+
+struct pwaldraceWorker : public Worker
+{
+  // Input matrix
+  const RMatrix<double> input;
+
+  // Destination matrix
+  RVector<double> output;
+
+  // initialize with source and destination
+  pwaldraceWorker(const Rcpp::NumericMatrix input,
+              Rcpp::NumericVector output)
+    : input(input), output(output) {}
+
+  // function call operator working for the specified range (begin/end)
+  void operator()(std::size_t begin, std::size_t end) {
+
+    for(std::size_t j = begin; j < end; j++) {
+
+      double cur_rt = input(j,0); // Extract RT
+
+      std::vector<double> par(9); // Extract parameters
+      for (int i = 1; i < 10; i++) { par[i-1] = input(j,i); }
+
+      output[j] = pwaldrace_scl( par, 0.0, cur_rt );
+    }
+  }
+};
+
+// Lookup - 13
+//' Distribution Function for the Wald Race Model
+//'
+//' Calculates the joint distribution function for a two choice version
+//' of the Wald race model.
+//'
+//' @param rt a vector of response times (rt > 0).
+//' @param ch a vector of choices (ch = {0,1}).
+//' @param k1 the threshold determining when a decision terminates for
+//'   choices == 1 ( k1 > 0).
+//' @param xi1 the average rate of evidence accumulation within a trial
+//'   for choices == 1 (xi1 > 0).
+//' @param tau1 the residual latency for choices == 1 (tau1 >= 0).
+//' @param k0 the threshold determining when a decision terminates for
+//'   choices == 0 ( k0 > 0).
+//' @param xi0 the average rate of evidence accumulation within a trial
+//'   for choices == 0 (xi0 > 0).
+//' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
+//' @param s0 the within trial variability for choices == 0 (s0 > 0;
+//'   default is 1.0).
+//' @param s1 the within trial variability for choices == 1 (s1 > 0;
+//'   default is 1.0).
+//'
+//' @section Notes:
+//' For unequal vector lengths, values are recycled.
+//'
+//' @return Returns the value(s) for the joint distribution function for
+//' the two-choice version of the Wald race model.
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector pwaldrace (Rcpp::NumericVector rt,
+                               Rcpp::NumericVector ch,
+                               Rcpp::NumericVector k1,
+                               Rcpp::NumericVector xi1,
+                               Rcpp::NumericVector tau1,
+                               Rcpp::NumericVector k0,
+                               Rcpp::NumericVector xi0,
+                               Rcpp::NumericVector tau0,
+                               Rcpp::NumericVector s1 =
+                                 Rcpp::NumericVector::create(1.0),
+                                 Rcpp::NumericVector s0 =
+                                   Rcpp::NumericVector::create(1.0) ) {
+
+  int N_rt = rt.size(); // Number of response times
+  int N_ch = ch.size(); // Number of choices
+  int N_k1 = k1.size(); // Number of parameters
+  int N_xi1 = xi1.size();
+  int N_s1 = s1.size();
+  int N_tau1 = tau1.size();
+  int N_k0 = k0.size();
+  int N_xi0 = xi0.size();
+  int N_s0 = s0.size();
+  int N_tau0 = tau0.size();
+
+  // Increment variables for loop
+  int rt_inc = 0.0;
+  int ch_inc = 0.0;
+  int k1_inc = 0.0;
+  int xi1_inc = 0.0;
+  int s1_inc = 0.0;
+  int tau1_inc = 0.0;
+  int k0_inc = 0.0;
+  int xi0_inc = 0.0;
+  int s0_inc = 0.0;
+  int tau0_inc = 0.0;
+
+  // Determine the longest input vector
+  int N = max(Rcpp::NumericVector::create(N_rt, N_ch, N_k1,
+                                          N_xi1, N_s1, N_tau1, N_k0,
+                                          N_xi0, N_s0, N_tau0));
+
+  // Set output vector
+  Rcpp::NumericVector out(N);
+
+  // Variable declaration
+  Rcpp::NumericVector rt_v(N);
+  Rcpp::NumericVector ch_v(N);
+  Rcpp::NumericVector k1_v(N);
+  Rcpp::NumericVector xi1_v(N);
+  Rcpp::NumericVector s1_v(N);
+  Rcpp::NumericVector tau1_v(N);
+  Rcpp::NumericVector k0_v(N);
+  Rcpp::NumericVector xi0_v(N);
+  Rcpp::NumericVector s0_v(N);
+  Rcpp::NumericVector tau0_v(N);
+
+  // Loop through observations
+  for (int nv = 0; nv < N; nv++) {
+    rt_v(nv) = rt(rt_inc);
+    ch_v(nv) = ch(ch_inc);
+    k1_v(nv) = k1(k1_inc);
+    xi1_v(nv) = xi1(xi1_inc);
+    s1_v(nv) = s1(s1_inc);
+    tau1_v(nv) = tau1(tau1_inc);
+    k0_v(nv) = k0(k0_inc);
+    xi0_v(nv) = xi0(xi0_inc);
+    s0_v(nv) = s0(s0_inc);
+    tau0_v(nv) = tau0(tau0_inc);
+
+    rt_inc = rt_inc + 1;
+    ch_inc = ch_inc + 1;
+    k1_inc = k1_inc + 1;
+    xi1_inc = xi1_inc + 1;
+    s1_inc = s1_inc + 1;
+    tau1_inc = tau1_inc + 1;
+    k0_inc = k0_inc + 1;
+    xi0_inc = xi0_inc + 1;
+    s0_inc = s0_inc + 1;
+    tau0_inc = tau0_inc + 1;
+    if (N_rt==rt_inc) rt_inc = 0;
+    if (N_ch==ch_inc) ch_inc = 0;
+    if (N_k1==k1_inc) k1_inc = 0;
+    if (N_xi1==xi1_inc) xi1_inc = 0;
+    if (N_s1==s1_inc) s1_inc = 0;
+    if (N_tau1==tau1_inc) tau1_inc = 0;
+    if (N_k0==k0_inc) k0_inc = 0;
+    if (N_xi0==xi0_inc) xi0_inc = 0;
+    if (N_s0==s0_inc) s0_inc = 0;
+    if (N_tau0==tau0_inc) tau0_inc = 0;
+  }
+
+  // Calculate distribution function
+  for (int n = 0; n < N; n++) {
+
+    std::vector<double> par(9);
+    par[0] = ch_v(n); par[1] = k1_v(n); par[2] = xi1_v(n);
+    par[3] = s1_v(n); par[4] = tau1_v(n);
+    par[5] = k0_v(n); par[6] = xi0_v(n); par[7] = s0_v(n);
+    par[8] = tau0_v(n);
+
+    out(n) = pwaldrace_scl( par, 0.0, rt_v(n) );
+  }
+
+  return ( out );
+}
+
+// Lookup - 12
+//' Distribution Function for the Wald Race Model
+//'
+//' Calculates the joint distribution function for a two choice version
+//' of the Wald race model.
+//'
+//' @param rt a vector of response times (rt > 0).
+//' @param ch a vector of choices (ch = {0,1}).
+//' @param k1 the threshold determining when a decision terminates for
+//'   choices == 1 ( k1 > 0).
+//' @param xi1 the average rate of evidence accumulation within a trial
+//'   for choices == 1 (xi1 > 0).
+//' @param tau1 the residual latency for choices == 1 (tau1 >= 0).
+//' @param k0 the threshold determining when a decision terminates for
+//'   choices == 0 ( k0 > 0).
+//' @param xi0 the average rate of evidence accumulation within a trial
+//'   for choices == 0 (xi0 > 0).
+//' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
+//' @param s0 the within trial variability for choices == 0 (s0 > 0;
+//'   default is 1.0).
+//' @param s1 the within trial variability for choices == 1 (s1 > 0;
+//'   default is 1.0).
+//' @param parYes if set to 1, the code is run in parallel.
+//'
+//' @section Notes:
+//' For unequal vector lengths, values are recycled.
+//'
+//' @return Returns the value(s) for the joint distribution function for
+//' the two-choice version of the Wald race model.
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector pwaldrace2 ( Rcpp::NumericVector rt,
+                                 Rcpp::NumericVector ch,
+                                 Rcpp::NumericVector k1,
+                                 Rcpp::NumericVector xi1,
+                                 Rcpp::NumericVector tau1,
+                                 Rcpp::NumericVector k0,
+                                 Rcpp::NumericVector xi0,
+                                 Rcpp::NumericVector tau0,
+                                 Rcpp::NumericVector s1 =
+                                 Rcpp::NumericVector::create(1.0),
+                                 Rcpp::NumericVector s0 =
+                                   Rcpp::NumericVector::create(1.0),
+                               int parYes = 0 ) {
+
+  int N_rt = rt.size(); // Number of response times
+  int N_ch = ch.size(); // Number of choices
+  int N_k1 = k1.size(); // Number of parameters
+  int N_xi1 = xi1.size();
+  int N_s1 = s1.size();
+  int N_tau1 = tau1.size();
+  int N_k0 = k0.size();
+  int N_xi0 = xi0.size();
+  int N_s0 = s0.size();
+  int N_tau0 = tau0.size();
+
+  // Increment variables for loop
+  int rt_inc = 0.0;
+  int ch_inc = 0.0;
+  int k1_inc = 0.0;
+  int xi1_inc = 0.0;
+  int s1_inc = 0.0;
+  int tau1_inc = 0.0;
+  int k0_inc = 0.0;
+  int xi0_inc = 0.0;
+  int s0_inc = 0.0;
+  int tau0_inc = 0.0;
+
+  // Determine the longest input vector
+  int N = max(Rcpp::NumericVector::create(N_rt, N_ch, N_k1,
+                                          N_xi1, N_s1, N_tau1, N_k0,
+                                          N_xi0, N_s0, N_tau0));
+
+  // Structure of matrix
+  // prm(,0) = rt; prm(,1) = ch; prm(,2) = alpha;
+  // prm(,3) = theta; prm(,4) = xi; prm(,5) = tau;
+  // prm(,6) = sigma; prm(,7) = eta; prm(,8) = stheta
+  // prm(,9) = stau; prm(,10) = eps; prm(,11) = ver;
+
+  // Set output vector
+  Rcpp::NumericVector output(N);
+
+  // Set input matrix for parameters
+  Rcpp::NumericMatrix input(N,10);
+
+  // Loop through observations
+  for (int nv = 0; nv < N; nv++) {
+
+    input(nv,0) = rt(rt_inc);
+    input(nv,1) = ch(ch_inc);
+    input(nv,2) = k1(k1_inc);
+    input(nv,3) = xi1(xi1_inc);
+    input(nv,4) = s1(s1_inc);
+    input(nv,5) = tau1(tau1_inc);
+    input(nv,6) = k0(k0_inc);
+    input(nv,7) = xi0(xi0_inc);
+    input(nv,8) = s0(s0_inc);
+    input(nv,9) = tau0(tau0_inc);
+
+    rt_inc = rt_inc + 1;
+    ch_inc = ch_inc + 1;
+    k1_inc = k1_inc + 1;
+    xi1_inc = xi1_inc + 1;
+    s1_inc = s1_inc + 1;
+    tau1_inc = tau1_inc + 1;
+    k0_inc = k0_inc + 1;
+    xi0_inc = xi0_inc + 1;
+    s0_inc = s0_inc + 1;
+    tau0_inc = tau0_inc + 1;
+    if (N_rt==rt_inc) rt_inc = 0;
+    if (N_ch==ch_inc) ch_inc = 0;
+    if (N_k1==k1_inc) k1_inc = 0;
+    if (N_xi1==xi1_inc) xi1_inc = 0;
+    if (N_s1==s1_inc) s1_inc = 0;
+    if (N_tau1==tau1_inc) tau1_inc = 0;
+    if (N_k0==k0_inc) k0_inc = 0;
+    if (N_xi0==xi0_inc) xi0_inc = 0;
+    if (N_s0==s0_inc) s0_inc = 0;
+    if (N_tau0==tau0_inc) tau0_inc = 0;
+  }
+
+  // Calculate likelihood
+  if (parYes == 0) {
+
+    for (int j = 0; j < N; j++) {
+
+      double cur_rt = input(j,0);
+      std::vector<double> par(9);
+      for (int i = 1; i < 10; i++) { par[i-1] = input(j,i); }
+
+      output(j) = pwaldrace_scl( par, 0.0, cur_rt );
+    }
+  } else {
+
+    // Function call operator that works for the specified
+    // range (begin/end)
+    pwaldraceWorker mt(input, output);
+
+    // Call parallelFor to do the work
+    parallelFor(0, N, mt);
+  }
+
+  return ( output );
+}
+
