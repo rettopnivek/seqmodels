@@ -63,13 +63,13 @@ Lookup - 05: dw_vtheta_scl
 Lookup - 06: dw_vtau_scl
 Lookup - 07: dw_var
 Lookup - 08: dw_vxi_vtheta_scl
-Lookup - 09:
-Lookup - 10:
-Lookup - 11:
-Lookup - 12:
-Lookup - 13:
-Lookup - 14:
-Lookup - 14:
+Lookup - 09: dw_vxi_vtau_scl
+Lookup - 10: dw_vtheta_vtau_scl
+Lookup - 11: dw_var2
+Lookup - 12: dw_vxi_vtheta_vtau_scl
+Lookup - 13: dw_var3
+Lookup - 14: diff_wrapper
+Lookup - 15: ddiffWorker
 Lookup - 16: ddiff
 
 */

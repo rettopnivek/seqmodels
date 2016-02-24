@@ -261,6 +261,7 @@ dwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1
 #'   default is 1.0).
 #' @param s1 the within trial variability for choices == 1 (s1 > 0;
 #'   default is 1.0).
+#' @param parYes if set to 1, the code is run in parallel.
 #'
 #' @section Notes:
 #' For unequal vector lengths, values are recycled.
@@ -269,16 +270,28 @@ dwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1
 #' the two-choice version of the Wald race model.
 #'
 #' @export
-pwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0))) {
-    .Call('seqmodels_pwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0)
+pwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), parYes = 1L) {
+    .Call('seqmodels_pwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, parYes)
 }
 
-#' Distribution Function for the Wald Race Model
+#' Title
 #'
-#' Calculates the joint distribution function for a two choice version
-#' of the Wald race model.
+#' Short description.
 #'
-#' @param rt a vector of response times (rt > 0).
+#' @param variable description of variable.
+#'
+#' @return Function's return value(s).
+#' @export
+qwaldrace_scl <- function(prm) {
+    .Call('seqmodels_qwaldrace_scl', PACKAGE = 'seqmodels', prm)
+}
+
+#' Inverse Distribution Function for the Wald Race Model
+#'
+#' Calculates the inverse of the joint distribution function for a two choice
+#' version of the Wald race model using linear interpolation.
+#'
+#' @param p a vector of probabilities ( 0 >= p >= 1).
 #' @param ch a vector of choices (ch = {0,1}).
 #' @param k1 the threshold determining when a decision terminates for
 #'   choices == 1 ( k1 > 0).
@@ -294,15 +307,21 @@ pwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1
 #'   default is 1.0).
 #' @param s1 the within trial variability for choices == 1 (s1 > 0;
 #'   default is 1.0).
+#' @param mxRT the maximum RT response time value that the algorithm is applied to.
+#' @param em_step the maximum number of iterations for the linear interpolation.
+#' @param err the desired degree of precision for the linear interpolation.
+#' @param joint If 1, indicates that the probabilities are based on the joint
+#'   distribution function.
+#' @param parYes if set to 1, the code is run in parallel.
 #'
 #' @section Notes:
 #' For unequal vector lengths, values are recycled.
 #'
-#' @return Returns the value(s) for the joint distribution function for
+#' @return Returns the quantile(s) for the inverse joint distribution function for
 #' the two-choice version of the Wald race model.
 #'
 #' @export
-pwaldrace2 <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), parYes = 0L) {
-    .Call('seqmodels_pwaldrace2', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, parYes)
+qwaldrace <- function(p, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), mxRT = 4.0, em_stop = 20.0, err = 0.001, joint = 1.0, parYes = 1L) {
+    .Call('seqmodels_qwaldrace', PACKAGE = 'seqmodels', p, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, mxRT, em_stop, err, joint, parYes)
 }
 
