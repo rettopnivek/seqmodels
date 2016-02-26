@@ -54,23 +54,26 @@ Example of roxygen2 documentation for Rcpp
 // Printing to R console
 Rcpp::Rcout << "Debugging example" << std::endl;
 
-Index:
-Lookup - 01: wfpt
-Lookup - 02: pr_absorb
-Lookup - 03: dwiener_scl
-Lookup - 04: dw_vxi_scl
-Lookup - 05: dw_vtheta_scl
-Lookup - 06: dw_vtau_scl
-Lookup - 07: dw_var
-Lookup - 08: dw_vxi_vtheta_scl
-Lookup - 09: dw_vxi_vtau_scl
-Lookup - 10: dw_vtheta_vtau_scl
-Lookup - 11: dw_var2
-Lookup - 12: dw_vxi_vtheta_vtau_scl
-Lookup - 13: dw_var3
-Lookup - 14: diff_wrapper
-Lookup - 15: ddiffWorker
-Lookup - 16: ddiff
+Index
+Lookup - 01:  wfpt
+Lookup - 02:  pr_absorb
+Lookup - 03:  dwiener_scl
+Lookup - 04:  dw_vxi_scl
+Lookup - 05:  dw_vtheta_scl
+Lookup - 06:  dw_vtau_scl
+Lookup - 07:  dw_var
+Lookup - 08:  dw_vxi_vtheta_scl
+Lookup - 09:  dw_vxi_vtau_scl
+Lookup - 10:  dw_vtheta_vtau_scl
+Lookup - 11:  dw_var2
+Lookup - 12:  dw_vxi_vtheta_vtau_scl
+Lookup - 13:  dw_var3
+Lookup - 14:  diff_wrapper
+Lookup - 15:  ddiffWorker
+Lookup - 16:  ddiff
+
+### TO DO ###
+Update .rd page
 
 */
 
@@ -211,7 +214,7 @@ double pr_absorb(double a, double z, double v,
 }
 
 // Lookup - 03
-// A scalar versions to calculate the full version of the
+// A scalar version to calculate the full version of the
 // density for the Wiener process
 
 double dwiener_scl( std::vector<double> par ) {
@@ -633,13 +636,11 @@ struct ddiffWorker : public Worker
   }
 };
 
-
 // Lookup - 16
-//' Likelihood for the Ratcliff diffusion model
+//' The Ratcliff diffusion model
 //'
-//' Calculates the likelihood or log-likelihood (joint or conditional)
-//' for the Wiener diffusion model using the implementation of Navarro
-//' and Fuss (2009).
+//' Density, distribution, random generation, and quantile functions
+//' for the diffusion model (e.g. Ratcliff & Tuerlinckx, 2002).
 //'
 //' @param rt a vector of responses times ( rt > 0 ).
 //' @param ch a vector of accuracy/choice values ( ch = {0,1} ).
@@ -668,7 +669,11 @@ struct ddiffWorker : public Worker
 //' @param ln indicates whether the likelihood (ln = 0 ) or the
 //'   log-likelihood ( ln = 1 ) should be calculated ( default is 0 ).
 //'
-//' @section Notes:
+//' @section Details:
+//' The density function is based on the implementation of Navarro
+//' and Fuss (2009). The distribution function is based on the
+//' implementation of Blurton et al. (2012). For parameter variability
+//' the functions use numerical integration with adaptive quadrature.
 //' For unequal vector lengths, values are recycled.
 //'
 //' @section References:
@@ -679,8 +684,6 @@ struct ddiffWorker : public Worker
 //'   diffusion model: Approaches to dealing with contaminant reaction
 //'   times and parameter variability. Psychonomic Bulletin & Review, 9,
 //'   438-481.
-//'
-//' @return A vector of likelihood or log-likelihood values.
 //'
 //' @export
 // [[Rcpp::export]]
@@ -790,8 +793,9 @@ Rcpp::NumericVector ddiff( Rcpp::NumericVector rt,
     if ( (input(nv,7) > 10.0) ||
          ( input(nv,3) - (input(nv,8)/2.0 ) <= 0.0 ) ||
          ( input(nv,3) + (input(nv,8)/2.0 ) >= 1.0 ) ||
-         ( input(nv,5) - (input(nv,9)/2.0 ) <= 0.0 ) )
+         ( input(nv,5) - (input(nv,9)/2.0 ) < 0.0 ) ) {
       input(nv,11) = 0.0;
+    }
 
     rt_inc = rt_inc + 1;
     ch_inc = ch_inc + 1;

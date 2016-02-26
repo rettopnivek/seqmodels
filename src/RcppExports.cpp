@@ -6,8 +6,8 @@
 using namespace Rcpp;
 
 // pdiff
-Rcpp::NumericVector pdiff(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector alpha, Rcpp::NumericVector theta, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector sigma, double eps, int parYes);
-RcppExport SEXP seqmodels_pdiff(SEXP rtSEXP, SEXP chSEXP, SEXP alphaSEXP, SEXP thetaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP sigmaSEXP, SEXP epsSEXP, SEXP parYesSEXP) {
+Rcpp::NumericVector pdiff(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector alpha, Rcpp::NumericVector theta, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector eta, Rcpp::NumericVector stheta, Rcpp::NumericVector stau, Rcpp::NumericVector sigma, double eps, int parYes);
+RcppExport SEXP seqmodels_pdiff(SEXP rtSEXP, SEXP chSEXP, SEXP alphaSEXP, SEXP thetaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP etaSEXP, SEXP sthetaSEXP, SEXP stauSEXP, SEXP sigmaSEXP, SEXP epsSEXP, SEXP parYesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -17,10 +17,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type xi(xiSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type eta(etaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type stheta(sthetaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type stau(stauSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
     Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
     Rcpp::traits::input_parameter< int >::type parYes(parYesSEXP);
-    __result = Rcpp::wrap(pdiff(rt, ch, alpha, theta, xi, tau, sigma, eps, parYes));
+    __result = Rcpp::wrap(pdiff(rt, ch, alpha, theta, xi, tau, eta, stheta, stau, sigma, eps, parYes));
     return __result;
 END_RCPP
 }
@@ -90,6 +93,23 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// qinvgauss
+Rcpp::NumericVector qinvgauss(Rcpp::NumericVector p, Rcpp::NumericVector kappa, Rcpp::NumericVector xi, Rcpp::NumericVector sigma, double mxT, int em_stop, double err);
+RcppExport SEXP seqmodels_qinvgauss(SEXP pSEXP, SEXP kappaSEXP, SEXP xiSEXP, SEXP sigmaSEXP, SEXP mxTSEXP, SEXP em_stopSEXP, SEXP errSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type xi(xiSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type mxT(mxTSEXP);
+    Rcpp::traits::input_parameter< int >::type em_stop(em_stopSEXP);
+    Rcpp::traits::input_parameter< double >::type err(errSEXP);
+    __result = Rcpp::wrap(qinvgauss(p, kappa, xi, sigma, mxT, em_stop, err));
+    return __result;
+END_RCPP
+}
 // rwaldrace
 Rcpp::NumericMatrix rwaldrace(int N, Rcpp::NumericVector k1, Rcpp::NumericVector xi1, Rcpp::NumericVector tau1, Rcpp::NumericVector k0, Rcpp::NumericVector xi0, Rcpp::NumericVector tau0, Rcpp::NumericVector s1, Rcpp::NumericVector s0);
 RcppExport SEXP seqmodels_rwaldrace(SEXP NSEXP, SEXP k1SEXP, SEXP xi1SEXP, SEXP tau1SEXP, SEXP k0SEXP, SEXP xi0SEXP, SEXP tau0SEXP, SEXP s1SEXP, SEXP s0SEXP) {
@@ -148,17 +168,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type s0(s0SEXP);
     Rcpp::traits::input_parameter< int >::type parYes(parYesSEXP);
     __result = Rcpp::wrap(pwaldrace(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, parYes));
-    return __result;
-END_RCPP
-}
-// qwaldrace_scl
-double qwaldrace_scl(std::vector<double> prm);
-RcppExport SEXP seqmodels_qwaldrace_scl(SEXP prmSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< std::vector<double> >::type prm(prmSEXP);
-    __result = Rcpp::wrap(qwaldrace_scl(prm));
     return __result;
 END_RCPP
 }

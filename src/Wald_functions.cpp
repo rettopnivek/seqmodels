@@ -4,7 +4,7 @@
 #include <limits>
 #include "gsl/include/gsl_integration.h" // Numerical integration
 #include "gsl/include/gsl_errno.h" // Error handling
-#include "Misc_functions.h" // Error handling
+#include "Misc_functions.h" // Linear interpolation
 
 using namespace RcppParallel;
 
@@ -13,9 +13,6 @@ Purpose:
 Assorted functions for the calculation of the probability density
 function of the Wald Race model (Logan et al., 2014) as well as
 its simulation.
-
-Notes:
-Forthcoming
 
 References:
 Logan, G. D., Van Zandt, T., Verbruggen, F., & Wagenmakers, E. J. (2014).
@@ -33,13 +30,22 @@ Lookup - 03:  dinvgauss_scl
 Lookup - 04:  dinvgauss
 Lookup - 05:  pinvgauss_scl
 Lookup - 06:  pinvgauss
-Lookup - 07:  rwaldrace
-Lookup - 08:  dwaldrace_scl
-Lookup - 09:  dwaldrace
-Lookup - 10:  int_dwaldrace_scl
-Lookup - 11:  pwaldrace_scl
-Lookup - 12:  pwaldraceWorker
-Lookup - 13:  pwaldrace
+Lookup - 07:  qinvgauss_scl
+Lookup - 08:  qinvgauss
+Lookup - 09:  rwaldrace
+Lookup - 10:  dwaldrace_scl
+Lookup - 11:  dwaldrace
+Lookup - 12:  int_dwaldrace_scl
+Lookup - 13:  pwaldrace_scl
+Lookup - 14:  pwaldraceWorker
+Lookup - 15:  pwaldrace
+Lookup - 16:  qwaldrace_scl
+Lookup - 17:  qwaldraceWorker
+Lookup - 18:  qwaldrace
+
+### TO DO ###
+Add references for inverse gaussian
+Add examples for Wald race model
 */
 
 // Lookup - 01
@@ -73,21 +79,34 @@ double rinvgauss_scl(double kappa, double xi, double sigma) {
 }
 
 // Lookup - 02
-//' Random Deviates from the Wald Distribution
+//' The Inverse Gaussian Distribution
 //'
-//' Generates random draws from a Wald distribution (i.e. an
-//' inverse gaussian), parameterized based on Brownian
-//' motion.
+//' Random generation, density, distribution, and quantile functions for
+//' the inverse gaussian (or Wald) distribution.
 //'
-//' @param N the number of draws
+//' @param N the number of draws for random generation.
+//' @param t a vector of quantiles (typically response times).
 //' @param kappa a vector of thresholds determining when a decision
 //'   terminates (kappa > 0).
 //' @param xi a vector of drift rates, or rates of evidence accumulation
 //'   (xi > 0).
 //' @param sigma a vector of the within-trial variabilities
 //'   (sigma > 0).
+//' @param ln indicates whether the log-likelihood should be returned,
+//'   where 1 = True, 0 = False (the default).
+//' @param mxT the maximum time that the quantile function algorithm is
+//'   applied to.
+//' @param em_step the maximum number of iterations for the linear
+//'   interpolation used in the quantile function.
+//' @param err the desired degree of precision for the linear interpolation
+//'   used in the quantile function.
 //'
-//' @section Notes:
+//' @section Details:
+//' The inverse gaussian distribution describes the first passage times
+//' through a positive threshold kappa for a space and time homogenous
+//' Wiener diffusion process. The current functions use a parameterization
+//' suitable for sequential sampling models.
+//'
 //' For unequal vector lengths, values are recycled.
 //'
 //' @section References:
@@ -95,11 +114,27 @@ double rinvgauss_scl(double kappa, double xi, double sigma) {
 //'   random variates using transformations with multiple roots.
 //'   The American Statistician, 30 (2), 88-90. doi:10.2307/2683801.
 //'
-//' @return Returns a numeric vector consisting of random draws from
-//'   the Wald distribution.
-//'
 //' @examples
-//' rinvgauss(8,c(1,2,-1,1),c(1,.5,1,-1),c(1,1,1,1))
+//' # Treatment of illegal values and vectorization
+//' set.seed(100)
+//' rinvgauss(8,c(1,2,-1,1),c(1,.5,1,-1),c(1,1,1,1)) # Returns NA
+//' dinvgauss( c(.5, -1), c(1,2,-1,1),c(1,.4,1,-1),c(1,1,1,1) ) # Returns 0
+//' pinvgauss( c(.5, -1), c(1,2,-1,1),c(1,.4,1,-1),c(1,1,1,1) ) # Returns 0
+//'
+//' # Demonstrates how parameters kappa and xi scale with different values of sigma
+//' t = seq(0,1,length=1000)
+//' plot( t, dinvgauss(t,.1,.2,.1), type = 'l', bty ='l', xlab = 'Time', ylab = 'Density', lwd = 2 )
+//' lines( t, dinvgauss(t,1,2,1), col = 'red', lty = 2, lwd = 2 )
+//'
+//' # Distribution function
+//' plot( t, pinvgauss(t,1,2,1), type = 'l', xlab = 'Time', ylab = 'Distribution', bty = 'l', yaxt = 'n' )
+//' axis(2,seq(.2,.8,.2))
+//' # Quantile function
+//' prb = seq( .2, .8, .2 ) # Probabilities
+//' qnt = qinvgauss( prb, 1, 2, 1 )
+//' segments( rep(0,length(prb)), prb, qnt, prb )
+//' segments( qnt,rep(0,length(prb)), qnt, prb )
+//'
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector rinvgauss(int N, Rcpp::NumericVector kappa,
@@ -174,27 +209,7 @@ double dinvgauss_scl (double t, double kappa, double xi,
 }
 
 // Lookup - 04
-//' Density Function for the Wald Distribution
-//'
-//' Calculates the density function for the Wald distribution (i.e.
-//' an inverse gaussian), parameterized based on Brownian
-//' motion.
-//'
-//' @param kappa a vector of thresholds determining when a decision
-//'   terminates (kappa > 0).
-//' @param xi a vector of drift rates, or rates of evidence accumulation
-//'   (xi > 0).
-//' @param sigma a vector of the within-trial variabilities
-//'   (sigma > 0).
-//' @param ln indicates whether the log-likelihood should be returned,
-//'   where 1 = True, 0 = False (the default).
-//'
-//' @section Notes:
-//' For unequal vector lengths, values are recycled.
-//'
-//' @return Returns a numeric vector consisting of the density (or
-//'   log density) for the model.
-//'
+//' @rdname rinvgauss
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector dinvgauss(Rcpp::NumericVector t,
@@ -266,35 +281,22 @@ double pinvgauss_scl (double t, double kappa, double xi, double sigma) {
   if ( (t <= 0.0) | (kappa <= 0.0) | ( xi <= 0.0) | (sigma <= 0.0) )
     out = 0.0;
   else {
-    // Calculate the cumulative density
-    p1 = pow( ( pow(kappa,2.0)/pow(sigma,2.0) )/t,0.5 )*(t/(kappa/xi)-1.0);
-    p2 = -1.0*pow( ( pow(kappa,2.0)/pow(sigma,2.0) )/t,0.5 )*(t/(kappa/xi)+1.0);
-    out = R::pnorm(p1,0.0,1.0,1,0) +
-      exp(2.0*( pow(kappa,2.0)/pow(sigma,2.0) )/(kappa/xi))*R::pnorm(p2,0.0,1.0,1,0);
+    if ( t == R_PosInf ) {
+      out = 1.0;
+    } else {
+      // Calculate the cumulative density
+      p1 = pow( ( pow(kappa,2.0)/pow(sigma,2.0) )/t,0.5 )*(t/(kappa/xi)-1.0);
+      p2 = -1.0*pow( ( pow(kappa,2.0)/pow(sigma,2.0) )/t,0.5 )*(t/(kappa/xi)+1.0);
+      out = R::pnorm(p1,0.0,1.0,1,0) +
+        exp(2.0*( pow(kappa,2.0)/pow(sigma,2.0) )/(kappa/xi))*R::pnorm(p2,0.0,1.0,1,0);
+    }
   }
 
   return( out );
 }
 
 // Lookup - 06
-//' Distribution Function for the Wald Distribution
-//'
-//' Calculates the distribution function for the Wald distribution (i.e.
-//' an inverse gaussian), parameterized based on Brownian
-//' motion.
-//'
-//' @param kappa a vector of thresholds determining when a decision
-//'   terminates (kappa > 0).
-//' @param xi a vector of drift rates, or rates of evidence accumulation
-//'   (xi > 0).
-//' @param sigma a vector of the within-trial variabilities
-//'   (sigma > 0).
-//'
-//' @section Notes:
-//' For unequal vector lengths, values are recycled.
-//'
-//' @return Returns a numeric vector giving P(T <= t | kappa, xi, sigma).
-//'
+//' @rdname rinvgauss
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector pinvgauss(Rcpp::NumericVector t,
@@ -351,12 +353,141 @@ Rcpp::NumericVector pinvgauss(Rcpp::NumericVector t,
 }
 
 // Lookup - 07
-//' Random Deviates from the Wald Race Model
+// Scalar version of quantile function for Wald distribution using
+// linear interpolation.
+
+double qinvgauss_scl( double p, double kappa, double xi,
+                      double sigma, double mxT, int em_stop,
+                      double err ) {
+
+  // Initialize output
+  double cur_t = 0.0;
+
+  if ( p > 0.0 ) {
+
+    // Define an initial set of values
+    std::vector<double> iT(5);
+    for (int i = 1; i < 5; i++) {
+      iT[i] = ( exp(i)/exp(5) )*mxT;
+    }
+
+    // Determine the associated CDF values
+    std::vector<double> iPrb(5);
+    for (int i = 0; i < 5; i++) {
+      iPrb[i] = pinvgauss_scl( iT[i], kappa, xi, sigma );
+    }
+
+    // Determine the initial window that the point falls between
+    int p0 = minMax( p, iPrb, 0 );
+    int p1 = minMax( p, iPrb, 1 );
+
+    double lbp = iPrb[p0]; double lbt = iT[p0];
+    double ubp = iPrb[p1]; double ubt = iT[p1];
+
+    double prev_t = ubt; double prev_prb = ubp;
+    cur_t = linInterp( p, lbp, ubp, lbt, ubt );
+    double prb = pinvgauss_scl( cur_t, kappa, xi, sigma );
+
+    double epsilon = 1.0;
+    int cnt = 0;
+
+    while ( (cnt < em_stop) & (epsilon > err) ) {
+      if (prb < p) {
+        lbp = prb;
+        lbt = cur_t;
+      } else if ( lbp < prb ) {
+        ubp = prb;
+        ubt = cur_t;
+      } else {
+        lbp = prb;
+        lbt = cur_t;
+        ubp = prev_prb;
+        ubt = prev_t;
+      }
+      prev_t = cur_t; prev_prb = prb;
+      cur_t = linInterp( p, lbp, ubp, lbt, ubt );
+      prb = pinvgauss_scl( cur_t, kappa, xi, sigma );
+
+      cnt = cnt + 1;
+      epsilon = std::abs( p - prb );
+
+    }
+
+  }
+
+  return( cur_t );
+}
+
+// Lookup - 08
+//' @rdname rinvgauss
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector qinvgauss(Rcpp::NumericVector p,
+                              Rcpp::NumericVector kappa,
+                              Rcpp::NumericVector xi,
+                              Rcpp::NumericVector sigma,
+                              double mxT = 4.0, int em_stop = 20,
+                              double err = .0001 ) {
+
+  int N_p = p.size(); // Number of observations
+  int N_kappa = kappa.size(); // Number of parameters
+  int N_xi = xi.size();
+  int N_sigma = sigma.size();
+
+  // Increment variables for loop
+  int p_inc = 0;
+  int kappa_inc = 0;
+  int xi_inc = 0;
+  int sigma_inc = 0;
+
+  // Determine the longest input vector
+  int N = max( Rcpp::NumericVector::create(N_p, N_kappa, N_xi, N_sigma) );
+
+  // Set output vector
+  Rcpp::NumericVector out(N);
+
+  // Create vectors
+  Rcpp::NumericVector p_v(N);
+  Rcpp::NumericVector kappa_v(N);
+  Rcpp::NumericVector xi_v(N);
+  Rcpp::NumericVector sigma_v(N);
+
+  // Loop through observations
+  for (int nv = 0; nv < N; nv++) {
+    p_v(nv) = p(p_inc);
+    kappa_v(nv) = kappa(kappa_inc);
+    xi_v(nv) = xi(xi_inc);
+    sigma_v(nv) = sigma(sigma_inc);
+
+    p_inc = p_inc + 1;
+    kappa_inc = kappa_inc + 1;
+    xi_inc = xi_inc + 1;
+    sigma_inc = sigma_inc + 1;
+    if (N_p==p_inc) p_inc = 0;
+    if (N_kappa==kappa_inc) kappa_inc = 0;
+    if (N_xi==xi_inc) xi_inc = 0;
+    if (N_sigma==sigma_inc) sigma_inc = 0;
+  }
+
+  // Calculate the distribution function
+  for (int n = 0; n < N; n++) {
+    out(n) = qinvgauss_scl( p_v(n), kappa_v(n), xi_v(n), sigma_v(n),
+        mxT, em_stop, err );
+  }
+
+  return( out );
+}
+
+// Lookup - 09
+//' The Wald Race Model
 //'
-//' Simulates a set of response times and choices from a two accumulator
-//' version of the Wald race model (Logan et al., 2014).
+//' Random generation, density, distribution, and quantile functions for
+//' a two accumulator version of the Wald (or diffusion) race model
+//' (Logan et al., 2014).
 //'
 //' @param N the number of observations to simulate.
+//' @param rt a vector of response times (rt > 0).
+//' @param ch a vector of choices (ch = {0,1}).
 //' @param k1 the threshold determining when a decision terminates for
 //'   choices == 1 ( k1 > 0).
 //' @param xi1 the average rate of evidence accumulation within a trial
@@ -369,14 +500,59 @@ Rcpp::NumericVector pinvgauss(Rcpp::NumericVector t,
 //' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
 //' @param s0 the within trial variability for choices == 0 (s0 > 0).
 //' @param s1 the within trial variability for choices == 1 (s1 > 0).
+//' @param ln indicates whether the log-likelihood should be returned,
+//'   where 1 = True, 0 = False (the default).
+//' @param mxRT the maximum RT response time value that the algorithm is applied to.
+//' @param em_step the maximum number of iterations for the linear interpolation.
+//' @param err the desired degree of precision for the linear interpolation.
+//' @param joint If 1, indicates that the probabilities are based on the joint
+//'   distribution function.
+//' @param parYes if set to 1, the code is run in parallel.
+//'
+//' @section Details:
+//' The Wald (or diffusion) race model assumes that two independent one
+//' boundary diffusion processes race each other. Whichever racer reaches
+//' its threshold first determines the choice and response time. Because
+//' of the independence, the likelihood for the Wald race model is:
+//' \deqn{ f(t,y|\alpha)*(1-F(t,y|\beta)},
+//' where \eqn{\alpha} and \eqn{\beta} are the sets of parameters for
+//' the Wald distribution describing the finishing times for the
+//' winning and losing racer respectively, and \eqn{f} and \eqn{F} refer
+//' to the density and distribution functions respectively.
 //'
 //' @section Notes:
-//' For unequal vector lengths, values are recycled. Inadmissible values
-//' return NA.
+//' For unequal vector lengths, values are recycled. For random draws,
+//' inadmissible values return NA.
 //'
-//' @return Returns a matrix with two columns, the first consiting of
-//' response times, the second indicate the choice (i.e. the winning
-//' accumulator, either 1 or 0).
+//' @section References:
+//' Logan, G. D., Van Zandt, T., Verbruggen, F., & Wagenmakers, E. J.
+//'   (2014). On the ability to inhibit thought and action: General
+//'   and special theories of an act of control. Psychological Review,
+//'   121, 66.
+//'
+//' @examples
+//' # Treatment of illegal values and vectorization
+//' set.seed(200)
+//' rwaldrace( 8, c(1,2,-1,1), c(4,1,1,1), c(.2,-.1), 1, 1, .2 ) # Returns NA
+//' dwaldrace( .5, 1, c(1,-2,1), 4, .2, c(1,1,-2), 1, .2 )
+//'
+//' # Density function
+//' rt = seq(0,1,length=1000)
+//' plot( rt, dwaldrace( rt, 1, .1, .4, .2, .1, .2, .2, s1 = .1, s0 = .1 ),
+//'   type = 'l', bty ='l', xlab = 'Time', ylab = 'Density' )
+//' lines( rt, dwaldrace( rt, 0, 1, 4, .2, 1, 2, .2 ), lty = 2 )
+//'
+//' # Distribution function
+//' rt = seq(0,2,length=1000)
+//' pwaldrace( Inf, 1, 1.8, 3, .2, 1.4, 1, .2 ) # Choice probabilities
+//' plot( rt, pwaldrace( rt, 1, 1.8, 3, .2, 1.4, 1, .2 ), type = 'l',
+//'   xlab = 'Time', ylab = 'Distribution', bty = 'l', yaxt = 'n' )
+//' axis(2,seq(.2,.8,.2))
+//' # Quantile function
+//' prb = seq( .1, .7, .2 ) # Probabilities
+//' qnt = qwaldrace( prb, 1, 1.8, 3, .2, 1.4, 1, .2 )
+//' segments( rep(0,length(prb)), prb, qnt, prb )
+//' segments( qnt,rep(0,length(prb)), qnt, prb )
 //'
 //' @export
 // [[Rcpp::export]]
@@ -488,10 +664,13 @@ Rcpp::NumericMatrix rwaldrace (int N, Rcpp::NumericVector k1,
     }
   }
 
+  // Set column names
+  colnames(out) = Rcpp::CharacterVector::create("rt", "ch");
+
   return ( out );
 }
 
-// Lookup - 08
+// Lookup - 10
 // A scalar version for the dwaldrace function
 
 double dwaldrace_scl (double rt, double ch, double k1, double xi1,
@@ -527,37 +706,8 @@ double dwaldrace_scl (double rt, double ch, double k1, double xi1,
   return( out );
 }
 
-// Lookup - 09
-//' Density Function for the Wald Race Model
-//'
-//' Calculates the joint density for a two choice version of the Wald race
-//' model.
-//'
-//' @param rt a vector of response times (rt > 0).
-//' @param ch a vector of choices (ch = {0,1}).
-//' @param k1 the threshold determining when a decision terminates for
-//'   choices == 1 ( k1 > 0).
-//' @param xi1 the average rate of evidence accumulation within a trial
-//'   for choices == 1 (xi1 > 0).
-//' @param tau1 the residual latency for choices == 1 (tau1 >= 0).
-//' @param k0 the threshold determining when a decision terminates for
-//'   choices == 0 ( k0 > 0).
-//' @param xi0 the average rate of evidence accumulation within a trial
-//'   for choices == 0 (xi0 > 0).
-//' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
-//' @param s0 the within trial variability for choices == 0 (s0 > 0;
-//'   default is 1.0).
-//' @param s1 the within trial variability for choices == 1 (s1 > 0;
-//'   default is 1.0).
-//' @param ln indicates whether the log-likelihood should be returned,
-//'   where 1 = True, 0 = False (the default).
-//'
-//' @section Notes:
-//' For unequal vector lengths, values are recycled.
-//'
-//' @return Returns the joint likelihood (or the log-likelihood) for the
-//' two-choice version of the Wald race model.
-//'
+// Lookup - 11
+//' @rdname rwaldrace
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector dwaldrace (Rcpp::NumericVector rt,
@@ -662,7 +812,7 @@ Rcpp::NumericVector dwaldrace (Rcpp::NumericVector rt,
   return ( out );
 }
 
-// Lookup - 10
+// Lookup - 12
 // A variant of the scalar version of the density function to
 // integrate over.
 
@@ -682,7 +832,7 @@ double int_dwaldrace_scl( double x, void * params) {
   return out;
 }
 
-// Lookup - 11
+// Lookup - 13
 // A function that numerically integrates the density function in
 // order to determine the distribution function.
 
@@ -726,7 +876,7 @@ double pwaldrace_scl(std::vector<double> par,
   return(result);
 }
 
-// Lookup - 12
+// Lookup - 14
 // RcppParallel worker function
 
 struct pwaldraceWorker : public Worker
@@ -757,36 +907,8 @@ struct pwaldraceWorker : public Worker
   }
 };
 
-// Lookup - 13
-//' Distribution Function for the Wald Race Model
-//'
-//' Calculates the joint distribution function for a two choice version
-//' of the Wald race model.
-//'
-//' @param rt a vector of response times (rt > 0).
-//' @param ch a vector of choices (ch = {0,1}).
-//' @param k1 the threshold determining when a decision terminates for
-//'   choices == 1 ( k1 > 0).
-//' @param xi1 the average rate of evidence accumulation within a trial
-//'   for choices == 1 (xi1 > 0).
-//' @param tau1 the residual latency for choices == 1 (tau1 >= 0).
-//' @param k0 the threshold determining when a decision terminates for
-//'   choices == 0 ( k0 > 0).
-//' @param xi0 the average rate of evidence accumulation within a trial
-//'   for choices == 0 (xi0 > 0).
-//' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
-//' @param s0 the within trial variability for choices == 0 (s0 > 0;
-//'   default is 1.0).
-//' @param s1 the within trial variability for choices == 1 (s1 > 0;
-//'   default is 1.0).
-//' @param parYes if set to 1, the code is run in parallel.
-//'
-//' @section Notes:
-//' For unequal vector lengths, values are recycled.
-//'
-//' @return Returns the value(s) for the joint distribution function for
-//' the two-choice version of the Wald race model.
-//'
+// Lookup - 15
+//' @rdname rwaldrace
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector pwaldrace ( Rcpp::NumericVector rt,
@@ -832,10 +954,10 @@ Rcpp::NumericVector pwaldrace ( Rcpp::NumericVector rt,
                                           N_xi0, N_s0, N_tau0));
 
   // Structure of matrix
-  // prm(,0) = rt; prm(,1) = ch; prm(,2) = alpha;
-  // prm(,3) = theta; prm(,4) = xi; prm(,5) = tau;
-  // prm(,6) = sigma; prm(,7) = eta; prm(,8) = stheta
-  // prm(,9) = stau; prm(,10) = eps; prm(,11) = ver;
+  // prm(,0) = rt; prm(,1) = ch; prm(,2) = k1;
+  // prm(,3) = xi1; prm(,4) = s1; prm(,5) = tau1;
+  // prm(,6) = k0; prm(,7) = xi0; prm(,8) = s0
+  // prm(,9) = tau0;
 
   // Set output vector
   Rcpp::NumericVector output(N);
@@ -903,7 +1025,7 @@ Rcpp::NumericVector pwaldrace ( Rcpp::NumericVector rt,
   return ( output );
 }
 
-// Lookup - 14
+// Lookup - 16
 // A scalar function that calculates the quantile given a cumulative probability
 // using linear interpolation.
 
@@ -983,7 +1105,7 @@ double qwaldrace_scl( std::vector<double> prm ) {
   return( cur_t );
 }
 
-// Lookup - 15
+// Lookup - 17
 // RcppParallel worker function
 
 struct qwaldraceWorker : public Worker
@@ -1012,41 +1134,8 @@ struct qwaldraceWorker : public Worker
   }
 };
 
-// Lookup - 16
-//' Inverse Distribution Function for the Wald Race Model
-//'
-//' Calculates the inverse of the joint distribution function for a two choice
-//' version of the Wald race model using linear interpolation.
-//'
-//' @param p a vector of probabilities ( 0 >= p >= 1).
-//' @param ch a vector of choices (ch = {0,1}).
-//' @param k1 the threshold determining when a decision terminates for
-//'   choices == 1 ( k1 > 0).
-//' @param xi1 the average rate of evidence accumulation within a trial
-//'   for choices == 1 (xi1 > 0).
-//' @param tau1 the residual latency for choices == 1 (tau1 >= 0).
-//' @param k0 the threshold determining when a decision terminates for
-//'   choices == 0 ( k0 > 0).
-//' @param xi0 the average rate of evidence accumulation within a trial
-//'   for choices == 0 (xi0 > 0).
-//' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
-//' @param s0 the within trial variability for choices == 0 (s0 > 0;
-//'   default is 1.0).
-//' @param s1 the within trial variability for choices == 1 (s1 > 0;
-//'   default is 1.0).
-//' @param mxRT the maximum RT response time value that the algorithm is applied to.
-//' @param em_step the maximum number of iterations for the linear interpolation.
-//' @param err the desired degree of precision for the linear interpolation.
-//' @param joint If 1, indicates that the probabilities are based on the joint
-//'   distribution function.
-//' @param parYes if set to 1, the code is run in parallel.
-//'
-//' @section Notes:
-//' For unequal vector lengths, values are recycled.
-//'
-//' @return Returns the quantile(s) for the inverse joint distribution function for
-//' the two-choice version of the Wald race model.
-//'
+// Lookup - 18
+//' @rdname rwaldrace
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector qwaldrace ( Rcpp::NumericVector p,
