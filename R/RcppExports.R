@@ -7,6 +7,36 @@ pdiff <- function(rt, ch, alpha, theta, xi, tau, eta = as.numeric( c(0.0)), sthe
     .Call('seqmodels_pdiff', PACKAGE = 'seqmodels', rt, ch, alpha, theta, xi, tau, eta, stheta, stau, sigma, eps, parYes)
 }
 
+#' Title
+#'
+#' Short description.
+#'
+#' @param variable description of variable.
+#'
+#' @return Function's return value(s).
+#' @export
+rwiener_choice <- function(par) {
+    .Call('seqmodels_rwiener_choice', PACKAGE = 'seqmodels', par)
+}
+
+#' Title
+#'
+#' Short description.
+#'
+#' @param variable description of variable.
+#'
+#' @return Function's return value(s).
+#' @export
+rwiener_scl <- function(par) {
+    .Call('seqmodels_rwiener_scl', PACKAGE = 'seqmodels', par)
+}
+
+#' @rdname ddiff
+#' @export
+rdiff <- function(N, alpha, theta, xi, tau, eta = as.numeric( c(0.0)), stheta = as.numeric( c(0.0)), stau = as.numeric( c(0.0)), sigma = as.numeric( c(1.0)), eps = 1e-29, mxRT = 4.0, em_stop = 20, err = .0001, parYes = 1L) {
+    .Call('seqmodels_rdiff', PACKAGE = 'seqmodels', N, alpha, theta, xi, tau, eta, stheta, stau, sigma, eps, mxRT, em_stop, err, parYes)
+}
+
 #' @useDynLib seqmodels
 #' @importFrom Rcpp sourceCpp
 NULL

@@ -27,6 +27,52 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// rwiener_choice
+double rwiener_choice(std::vector<double> par);
+RcppExport SEXP seqmodels_rwiener_choice(SEXP parSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type par(parSEXP);
+    __result = Rcpp::wrap(rwiener_choice(par));
+    return __result;
+END_RCPP
+}
+// rwiener_scl
+double rwiener_scl(std::vector<double> par);
+RcppExport SEXP seqmodels_rwiener_scl(SEXP parSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type par(parSEXP);
+    __result = Rcpp::wrap(rwiener_scl(par));
+    return __result;
+END_RCPP
+}
+// rdiff
+Rcpp::NumericVector rdiff(int N, Rcpp::NumericVector alpha, Rcpp::NumericVector theta, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector eta, Rcpp::NumericVector stheta, Rcpp::NumericVector stau, Rcpp::NumericVector sigma, double eps, double mxRT, double em_stop, double err, int parYes);
+RcppExport SEXP seqmodels_rdiff(SEXP NSEXP, SEXP alphaSEXP, SEXP thetaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP etaSEXP, SEXP sthetaSEXP, SEXP stauSEXP, SEXP sigmaSEXP, SEXP epsSEXP, SEXP mxRTSEXP, SEXP em_stopSEXP, SEXP errSEXP, SEXP parYesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type xi(xiSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type eta(etaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type stheta(sthetaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type stau(stauSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< double >::type mxRT(mxRTSEXP);
+    Rcpp::traits::input_parameter< double >::type em_stop(em_stopSEXP);
+    Rcpp::traits::input_parameter< double >::type err(errSEXP);
+    Rcpp::traits::input_parameter< int >::type parYes(parYesSEXP);
+    __result = Rcpp::wrap(rdiff(N, alpha, theta, xi, tau, eta, stheta, stau, sigma, eps, mxRT, em_stop, err, parYes));
+    return __result;
+END_RCPP
+}
 // ddiff
 Rcpp::NumericVector ddiff(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector alpha, Rcpp::NumericVector theta, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector eta, Rcpp::NumericVector stheta, Rcpp::NumericVector stau, Rcpp::NumericVector sigma, double eps, int ln, int parYes);
 RcppExport SEXP seqmodels_ddiff(SEXP rtSEXP, SEXP chSEXP, SEXP alphaSEXP, SEXP thetaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP etaSEXP, SEXP sthetaSEXP, SEXP stauSEXP, SEXP sigmaSEXP, SEXP epsSEXP, SEXP lnSEXP, SEXP parYesSEXP) {

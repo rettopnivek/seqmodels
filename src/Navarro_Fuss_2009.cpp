@@ -73,7 +73,7 @@ Lookup - 15:  ddiffWorker
 Lookup - 16:  ddiff
 
 ### TO DO ###
-Update .rd page
+Update .rd page (add examples)
 
 */
 
@@ -90,7 +90,7 @@ double wfpt( double t, double v, double a,
 
   // t > 0
   // a > 0
-  // 0 >= z <= a
+  // 0 > z < a
 
   // Variable declaration
   double p1;
@@ -639,7 +639,7 @@ struct ddiffWorker : public Worker
 // Lookup - 16
 //' The Ratcliff diffusion model
 //'
-//' Density, distribution, random generation, and quantile functions
+//' Density, distribution, and random generation functions
 //' for the diffusion model (e.g. Ratcliff & Tuerlinckx, 2002).
 //'
 //' @param rt a vector of responses times ( rt > 0 ).
@@ -668,6 +668,9 @@ struct ddiffWorker : public Worker
 //'   ( default is 1e-29 ).
 //' @param ln indicates whether the likelihood (ln = 0 ) or the
 //'   log-likelihood ( ln = 1 ) should be calculated ( default is 0 ).
+//' @param mxRT the maximum RT response time value that the algorithm is applied to.
+//' @param em_step the maximum number of iterations for the linear interpolation.
+//' @param err the desired degree of precision for the linear interpolation.
 //'
 //' @section Details:
 //' The density function is based on the implementation of Navarro
@@ -679,7 +682,11 @@ struct ddiffWorker : public Worker
 //' @section References:
 //' Navarro, D. J., & Fuss, I. G. (2009). Fast and accurate calculations
 //'   for first-passage times in Wiener diffusion models. Journal of
-//'   Mathematical Psychology, 53(4), 222-230.
+//'   Mathematical Psychology, 53, 222-230.
+//' Blurton, S. P., Kesselmeier, M., & Gondan, M. (2012). Fast and
+//'   accurate calculations for cumulative first-passage time distributions
+//'   in Wiener diffusion models. Journal of Mathematical Psychology,
+//'   56, 470-475.
 //' Ratcliff, R., & Tuerlinckx, F. (2002). Estimating parameters of the
 //'   diffusion model: Approaches to dealing with contaminant reaction
 //'   times and parameter variability. Psychonomic Bulletin & Review, 9,

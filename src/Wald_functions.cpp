@@ -4,7 +4,7 @@
 #include <limits>
 #include "gsl/include/gsl_integration.h" // Numerical integration
 #include "gsl/include/gsl_errno.h" // Error handling
-#include "Misc_functions.h" // Linear interpolation
+#include "miscfunctions.h" // Linear interpolation
 
 using namespace RcppParallel;
 

@@ -3,11 +3,17 @@
 \name{pdiff}
 \alias{ddiff}
 \alias{pdiff}
+\alias{rdiff}
 \title{The Ratcliff diffusion model}
 \usage{
 pdiff(rt, ch, alpha, theta, xi, tau, eta = as.numeric(c(0)),
   stheta = as.numeric(c(0)), stau = as.numeric(c(0)),
   sigma = as.numeric(c(1)), eps = 1e-29, parYes = 1L)
+
+rdiff(N, alpha, theta, xi, tau, eta = as.numeric(c(0)),
+  stheta = as.numeric(c(0)), stau = as.numeric(c(0)),
+  sigma = as.numeric(c(1)), eps = 1e-29, mxRT = 4, em_stop = 20,
+  err = 1e-04, parYes = 1L)
 
 ddiff(rt, ch, alpha, theta, xi, tau, eta = as.numeric(c(0)),
   stheta = as.numeric(c(0)), stau = as.numeric(c(0)),

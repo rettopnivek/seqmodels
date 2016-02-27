@@ -4,6 +4,7 @@
 #include <limits>
 #include "gsl/include/gsl_integration.h" // Numerical integration
 #include "gsl/include/gsl_errno.h" // Error handling
+#include "miscfunctions.h" // Linear interpolation
 
 using namespace RcppParallel;
 
@@ -37,9 +38,23 @@ Lookup - 07:  Fs_lower
 Lookup - 08:  F_lower
 Lookup - 09:  pwiener_scl
 Lookup - 10:
+Lookup - 11:
+Lookup - 12:
+Lookup - 13:
+Lookup - 14:
+Lookup - 15:
+Lookup - 16:
+Lookup - 17:
+Lookup - 18:
+Lookup - 19:
+Lookup - 20:
+Lookup - 21:
+Lookup - 22:
 
 ### TO DO ###
 Update references
+Update index
+Incorporate all variability into pdiffWrapper
 
 */
 
@@ -399,7 +414,7 @@ double pw_var(std::vector<double> par, double a,double b, int ver ) {
   return(result);
 }
 
-// Lookup - 08
+// Lookup - 14
 // A scalar version that calculates the function to
 // integrate over when both drift and starting point vary
 
@@ -426,7 +441,7 @@ double pw_vxi_vtheta_scl( double x, void * params ) {
   return out;
 }
 
-// Lookup - 09
+// Lookup - 15
 // A scalar version that calculates the function to
 // integrate over when both drift and residual latency vary
 
@@ -453,7 +468,7 @@ double pw_vxi_vtau_scl( double x, void * params ) {
   return out;
 }
 
-// Lookup - 10
+// Lookup - 16
 // A scalar version that calculates the function to
 // integrate over when both starting point and residual latency vary
 
@@ -485,7 +500,7 @@ double pw_vtheta_vtau_scl( double x, void * params ) {
   return out;
 }
 
-// Lookup - 11
+// Lookup - 17
 // Numerical integration routine for two parameters with variability
 
 double pw_var2(std::vector<double> par, double a, double b, int ver ) {
@@ -520,7 +535,7 @@ double pw_var2(std::vector<double> par, double a, double b, int ver ) {
   return(result);
 }
 
-// Lookup - 12
+// Lookup - 18
 // A scalar version that calculates the function to
 // integrate over when drift, starting point, and residual latency all
 // vary
@@ -553,7 +568,7 @@ double pw_vxi_vtheta_vtau_scl( double x, void * params ) {
   return out;
 }
 
-// Lookup - 13
+// Lookup - 19
 // Numerical integration routine for three parameters with variability
 
 double pw_var3(std::vector<double> par, double a, double b, int ver ) {
@@ -587,7 +602,7 @@ double pw_var3(std::vector<double> par, double a, double b, int ver ) {
 }
 
 
-// Lookup - 14
+// Lookup - 20
 // Overall wrapper function for use with parallelization
 
 double piff_wrapper( std::vector<double> par ) {
@@ -619,7 +634,7 @@ double piff_wrapper( std::vector<double> par ) {
   return( out );
 }
 
-// Lookup - 15
+// Lookup - 21
 // RcppParallel worker function
 
 struct pdiffWorker : public Worker
@@ -649,6 +664,7 @@ struct pdiffWorker : public Worker
   }
 };
 
+// Lookup - 22
 //' @rdname ddiff
 //' @export
 // [[Rcpp::export]]
@@ -810,295 +826,311 @@ Rcpp::NumericVector pdiff( Rcpp::NumericVector rt,
   return( output );
 }
 
-/*
-//
-// Forthcoming
-//
-
-// Lookup - ??
-// Forthcoming
-
-int minMax( double comp, Rcpp::NumericVector x, int Direction ) {
-
-  Rcpp::LogicalVector chk( x.size() );
-  if (Direction==1) { chk = x > comp; } else { chk = x < comp; }
-
-  int out;
-  int stp = 0;
-  if ( Direction == 1 ) {
-    out = 0;
-    int inc = chk.size() - 1;
-    while ( (stp==0) & (inc >= 0) ) {
-      if (chk(inc) == FALSE) { out = inc+1; stp = 1; }
-      inc = inc - 1;
-    }
-    if ( out == chk.size() ) out = out - 1;
-  } else {
-    out = chk.size() - 1;
-    int inc = 0;
-    while ( (stp==0) & (inc < chk.size()) ) {
-      if (chk(inc) == FALSE) { out = inc-1; stp = 1; }
-      inc = inc + 1;
-    }
-    if ( out == -1 ) out = 0;
-  }
-
-  return( out );
-}
-
-// Lookup - ??
-// Forthcoming
-
-double linInterp( double yN, double y0, double y1,
-                  double x0, double x1 ) {
-
-  double b1 = ( y1 - y0 ) / ( x1 - x0 ); // Slope
-  double b0 = y1 - b1*x1; // Intercept
-  double num = yN - b0;
-  double xN = ( num )/b1;
-
-  return( xN );
-}
-
-// Lookup - ??
-// Forthcoming
+// Lookup - 23
+// Scalar function that generates random choices based on
+// absorption at one of the two boundaries for a wiener
+// process
 
 double rwiener_choice( std::vector<double> par ) {
 
   // Initialize output
   double out;
 
-  // Input vector
-  std::vector<double> prm(8);
-  prm[0] = R_PosInf; prm[1] = 1.0;
-  prm[2] = par[0]; prm[3] = par[1];
-  prm[4] = par[2]; prm[5] = par[3];
-  prm[6] = par[4]; prm[7] = par[5];
+  // Calculate probability of absorption
+  // at lower boundary
+  double prb = Pu( par[4], par[2], par[3] );
 
-  // Calculate probability of a choice
-
-  double prb = pwiener_scl( prm );
-
-  if (prb == 0.0) {
+  // Check for inadmissable values and determine choice
+  if ( ( par[2] <= 0.0 ) ||
+       ( par[3] <= 0.0 ) ||
+       ( par[3] >= 1.0 ) ||
+       ( par[5] < 0.0 )  ||
+       ( par[6] <= 0.0 ) ||
+       ( prb <= 0.0 ) ) {
     out = NA_REAL;
   } else {
-    out = 1.0;
+    out = 0.0;
     double u = R::runif(0.0,1.0);
-    if ( u > prb ) out = 0.0;
+    if ( u > prb ) out = 1.0;
   }
 
   return( out );
 }
 
-double rwiener_scl( double ch, double alpha, double theta,
-                    double xi, double sigma, double tau,
-                    double mxRT = 4, double eps = 1e-29,
-                    int em_stop = 20, double err = .001 ) {
-  // std::
+// Lookup - 24
+// Scalar function that generates random deviates from the
+// two-boundary wiener process by approximating the inverse
+// cdf via linear interpolation
 
-  // Define an initial set of RTs
-  std::vector<double> iRT(5);
-  for (int i = 1; i < 5; i++) {
-    iRT[i] = ( exp(i)/exp(5) )*mxRT;
-  }
-  // Determine the associated CDF values
-  std::vector<double> iPrb(5);
-  for (int i = 0; i < 5; i++) {
-    iPrb(i) = pwiener_scl( iRT(i), ch, alpha, theta, xi, sigma,
-                           0.0, eps, 0 );
-  }
+double rwiener_scl( std::vector<double> par ) {
 
-  // Draw from a uniform distribution between 0 and 1
-  double rw = R::runif(0.0,1.0);
-  // Rcout << "rw: " << rw << std::endl; // For debugging
+  double mxRT = par[11];
+  int em_stop = par[12];
+  double err = par[13];
 
-  // Determine the initial window that the point falls between
-  int p0 = minMax( rw, iPrb, 0 );
-  int p1 = minMax( rw, iPrb, 1 );
+  // Initialize response time
+  double cur_t = 0.0;
 
-  double lbp = iPrb(p0); double lbt = iRT(p0);
-  double ubp = iPrb(p1); double ubt = iRT(p1);
+  // Check for inadmissable values
+  if ( (par[1] == 0.0 || par[1] == 1.0) ) {
 
-  double prev_t = ubt; double prev_prb = ubp;
-  double cur_t = linInterp( rw, lbp, ubp, lbt, ubt );
-  double prb = pwiener_scl( cur_t, ch, alpha, theta, xi, sigma, 0.0, eps, 0 );
-
-  double epsilon = 1.0;
-  int cnt = 0;
-
-  while ( (cnt < em_stop) & (epsilon > err) ) {
-    if (prb < rw) {
-      lbp = prb;
-      lbt = cur_t;
-    } else if ( lbp < prb ) {
-      ubp = prb;
-      ubt = cur_t;
-    } else {
-      lbp = prb;
-      lbt = cur_t;
-      ubp = prev_prb;
-      ubt = prev_t;
+    double maxP = Pu( par[4], par[2], par[3] );
+    // Extract choice probability
+    if ( par[1] == 1.0 ) {
+      maxP = 1.0 - maxP;
     }
-    prev_t = cur_t; prev_prb = prb;
-    cur_t = linInterp( rw, lbp, ubp, lbt, ubt );
-    prb = pwiener_scl( cur_t, ch, alpha, theta, xi, sigma, 0.0, eps, 0 );
 
-    cnt = cnt + 1;
-    epsilon = abs( rw - prb );
+    // Define an initial set of RTs
+    std::vector<double> iRT(5);
+    for (int i = 1; i < 5; i++) {
+      iRT[i] = ( exp(i)/exp(5) )*mxRT;
+    }
 
+    // Determine the associated CDF values
+    std::vector<double> iPrb(5);
+    for (int i = 0; i < 5; i++) {
+      par[0] = iRT[i];
+      iPrb[i] = pwiener_scl( par );
+    }
+
+    // Draw from a uniform distribution between 0 and 1
+    double p = R::runif(0.0,maxP);
+    // Rcpp::Rcout << "p: " << p << std::endl; // For debugging
+
+    // Determine the initial window that the point falls between
+    int p0 = minMax( p, iPrb, 0 );
+    int p1 = minMax( p, iPrb, 1 );
+
+    double lbp = iPrb[p0]; double lbt = iRT[p0];
+    double ubp = iPrb[p1]; double ubt = iRT[p1];
+
+    double prev_t = ubt; double prev_prb = ubp;
+    cur_t = linInterp( p, lbp, ubp, lbt, ubt );
+    par[0] = cur_t;
+    double prb = pwiener_scl( par );
+    // Rcpp::Rcout << "cur_t: " << cur_t << std::endl; // For debugging
+    // Rcpp::Rcout << "prb: " << prb << std::endl; // For debugging
+
+    double epsilon = 1.0;
+    int cnt = 0;
+
+    while ( (cnt < em_stop) & (epsilon > err) ) {
+      if (prb < p) {
+        lbp = prb;
+        lbt = cur_t;
+      } else if ( lbp < prb ) {
+        ubp = prb;
+        ubt = cur_t;
+      } else {
+        lbp = prb;
+        lbt = cur_t;
+        ubp = prev_prb;
+        ubt = prev_t;
+      }
+      prev_t = cur_t; prev_prb = prb;
+      cur_t = linInterp( p, lbp, ubp, lbt, ubt );
+      par[0] = cur_t;
+      prb = pwiener_scl( par );
+
+      cnt = cnt + 1;
+      epsilon = std::abs( p - prb );
+
+    }
+
+  } else {
+    cur_t = NA_REAL;
   }
-  // Rcout << "prb: " << prb << std::endl; // For debugging
 
-  return( cur_t + tau );
+  return( cur_t + par[5] );
 }
 
-// Lookup - ??
-//' Test
-//'
-//' Test.
-//'
-//' @param ch a vector of accuracy/choice values ( ch = {0,1} ).
-//'
-//' @return Test.
-//'
+// Lookup - 25
+// RcppParallel worker function
+
+struct rdiffWorker : public Worker
+{
+  // Input matrix
+  const RMatrix<double> input;
+
+  // Destination matrix
+  RMatrix<double> output;
+
+  // initialize with source and destination
+  rdiffWorker(const Rcpp::NumericMatrix input,
+              Rcpp::NumericMatrix output)
+    : input(input), output(output) {}
+
+  // function call operator working for the specified range (begin/end)
+  void operator()(std::size_t begin, std::size_t end) {
+
+    for(std::size_t j = begin; j < end; j++) {
+
+      std::vector<double> prm(14);
+
+      for (int i = 0; i < 14; i++) { prm[i] = input(j,i); }
+
+      // Determine choice
+      double ch_l = rwiener_choice( prm );
+      output(j,1) = ch_l;
+
+      // Determine response time
+      prm[1] = ch_l;
+      double rt_l = rwiener_scl( prm );
+      output(j,0) = rt_l;
+
+    }
+  }
+};
+
+
+// Lookup - 26
+//' @rdname ddiff
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericMatrix rwiener( int N, Rcpp::NumericVector alpha, Rcpp::NumericVector theta,
-                       Rcpp::NumericVector xi, Rcpp::NumericVector tau,
-                       Rcpp::NumericVector sigma = Rcpp::NumericVector::create(1.0),
-                       double mxRT = 4, double eps = 1e-29, int em_stop = 20,
-                       double err = .001 ) {
+Rcpp::NumericVector rdiff( int N,
+                           Rcpp::NumericVector alpha,
+                           Rcpp::NumericVector theta,
+                           Rcpp::NumericVector xi,
+                           Rcpp::NumericVector tau,
+                           Rcpp::NumericVector eta =
+                             Rcpp::NumericVector::create(0.0),
+                           Rcpp::NumericVector stheta =
+                             Rcpp::NumericVector::create(0.0),
+                           Rcpp::NumericVector stau =
+                             Rcpp::NumericVector::create(0.0),
+                           Rcpp::NumericVector sigma =
+                             Rcpp::NumericVector::create(1.0),
+                           double eps = 1e-29,
+                           double mxRT = 4.0,
+                           double em_stop = 20,
+                           double err = .0001,
+                           int parYes = 1) {
 
   int N_alpha = alpha.size(); // Number of parameters
   int N_theta = theta.size();
   int N_xi = xi.size();
   int N_tau = tau.size();
+  int N_eta = eta.size();
+  int N_stheta = stheta.size();
+  int N_stau = stau.size();
   int N_sigma = sigma.size();
 
   // Increment variables for loop
+  int alpha_inc = 0.0;
   int theta_inc = 0.0;
   int xi_inc = 0.0;
-  int alpha_inc = 0.0;
-  int sigma_inc = 0.0;
   int tau_inc = 0.0;
+  int eta_inc = 0.0;
+  int stheta_inc = 0.0;
+  int stau_inc = 0.0;
+  int sigma_inc = 0.0;
 
-  // Determine the longest input vector
+  // If N == 1, no parallelization
+  if (N == 1) parYes = 1;
+
+  // Structure of matrix
+  // prm(,0) = rt; prm(,1) = ch; prm(,2) = alpha;
+  // prm(,3) = theta; prm(,4) = xi; prm(,5) = tau;
+  // prm(,6) = sigma; prm(,7) = eta; prm(,8) = stheta
+  // prm(,9) = stau; prm(,10) = eps; prm(,11) = ver;
 
   // Set output vector
-  Rcpp::NumericMatrix out(N,2);
-  colnames(out) = Rcpp::CharacterVector::create("rt", "ch");
+  Rcpp::NumericMatrix output(N,2);
 
-  // Variable declaration
-  Rcpp::NumericVector alpha_v(N);
-  Rcpp::NumericVector theta_v(N);
-  Rcpp::NumericVector xi_v(N);
-  Rcpp::NumericVector sigma_v(N);
-  Rcpp::NumericVector tau_v(N);
+  // Set input matrix for parameters
+  Rcpp::NumericMatrix input(N,14);
 
   // Loop through observations
   for (int nv = 0; nv < N; nv++) {
-    alpha_v(nv) = alpha(alpha_inc);
-    theta_v(nv) = theta(theta_inc);
-    xi_v(nv) = xi(xi_inc);
-    sigma_v(nv) = sigma(sigma_inc);
-    tau_v(nv) = tau(tau_inc);
 
+    // Parameters for trial-to-trial variability
+
+    input(nv,7) = eta(eta_inc);
+    // Fix small values of eta to 0.0
+    if ( input(nv,7) < 1e-4 ) { input(nv,7) = 0.0; }
+    input(nv,8) = stheta(stheta_inc);
+    // Fix small values of stheta to 0.0
+    if ( input(nv,8) < 1e-4 ) { input(nv,8) = 0.0; }
+    input(nv,9) = stau(stau_inc);
+    // Fix small values of stau to 0.0
+    if ( input(nv,9) < 1e-4 ) { input(nv,9) = 0.0; }
+
+    // Generate random values for parameters
+    input(nv,3) = R::runif(
+      theta(theta_inc) - input(nv,8)/2.0,
+      theta(theta_inc) + input(nv,8)/2.0 );
+    input(nv,4) = R::rnorm( xi(xi_inc),
+          input(nv,7) );
+    input(nv,5) = R::runif(
+      tau(tau_inc) - input(nv,9)/2.0,
+      tau(tau_inc) + input(nv,9)/2.0 );
+
+    // Parameters that don't vary
+    input(nv,0) = 0.0;
+    input(nv,1) = 0.0;
+    input(nv,2) = alpha(alpha_inc);
+    input(nv,6) = sigma(sigma_inc);
+    input(nv,10) = eps;
+    input(nv,11) = mxRT;
+    input(nv,12) = em_stop;
+    input(nv,13) = err;
+
+    alpha_inc = alpha_inc + 1;
     theta_inc = theta_inc + 1;
     xi_inc = xi_inc + 1;
-    alpha_inc = alpha_inc + 1;
-    sigma_inc = sigma_inc + 1;
     tau_inc = tau_inc + 1;
+    eta_inc = eta_inc + 1;
+    stheta_inc = stheta_inc + 1;
+    stau_inc = stau_inc + 1;
+    sigma_inc = sigma_inc + 1;
+    if (N_alpha==alpha_inc) alpha_inc = 0;
     if (N_theta==theta_inc) theta_inc = 0;
     if (N_xi==xi_inc) xi_inc = 0;
-    if (N_alpha==alpha_inc) alpha_inc = 0;
-    if (N_sigma==sigma_inc) sigma_inc = 0;
     if (N_tau==tau_inc) tau_inc = 0;
+    if (N_eta==eta_inc) eta_inc = 0;
+    if (N_stheta==stheta_inc) stheta_inc = 0;
+    if (N_stau==stau_inc) stau_inc = 0;
+    if (N_sigma==sigma_inc) sigma_inc = 0;
   }
 
-  // Random draws using approximation to inverse CDF
-  for (int n = 0; n < N; n++) {
-    double ch = rwiener_choice( alpha_v(n), theta_v(n), xi_v(n),
-                                sigma_v(n), tau_v(n), eps );
-    double rt;
-    if ( Rcpp::NumericVector::is_na(ch) ) {
-      rt = NA_REAL;
-    } else {
-      rt = rwiener_scl( ch, alpha_v(n), theta_v(n), xi_v(n),
-                        sigma_v(n), tau_v(n), mxRT, eps,
-                        em_stop, err );
+  // Calculate likelihood
+  if (parYes == 0) {
+
+    for (int j = 0; j < N; j++) {
+
+      std::vector<double> prm(14);
+
+      for (int i = 0; i < 14; i++) { prm[i] = input(j,i); }
+
+      // Determine choice
+      double ch_l = rwiener_choice( prm );
+      output(j,1) = ch_l;
+
+      // Determine response time
+      prm[1] = ch_l;
+      double rt_l = rwiener_scl( prm );
+      output(j,0) = rt_l;
     }
-    out(n,0) = rt; out(n,1) = ch;
+
+  } else {
+
+    // Function call operator that works for the specified
+    // range (begin/end)
+    rdiffWorker mt(input, output);
+
+    // Call parallelFor to do the work
+    parallelFor(0, N, mt);
   }
 
-  return( out );
+  colnames(output) =
+    Rcpp::CharacterVector::create("rt", "ch");
+
+  return( output );
 }
 
 
- library(UtilityFunction)
 
- a = .8; w = .5; v = 1; rl = .2;
- val = seq(.001,1,length=1000)
+/*
 
- d1 = dwiener( val, 1, a, w, v, rl );
- d0 = dwiener( val, 0, a, w, v, rl );
-
- xl = lowerUpper( .2, val )
- yl = lowerUpper( .2, c(d1,d0) )
- x11(); plot( xl, yl, type='n', ylab = 'Density', xlab = 'RT(s)',
-              bty = 'l' );
- lines( val, d1 ); lines( val, d0, lty = 2 )
-
- tst = rwiener( 5000, a, w, v, rl );
- e1 = density( tst[ tst[,2]==1,1] )
- e0 = density( tst[ tst[,2]==1,1] )
- e1$y = e1$y*mean( tst[,2] )
- e0$y = e0$y*(1-mean( tst[,2] ) )
-
- lines( e1$x, e1$y, col='blue'); lines( e0$x, e0$y, lty = 2, col='blue')
-
-
- linInterp2 = function( yN, y0, y1, x0, x1 ) {
-   b1 = ( y1 - y0 ) / ( x1 - x0 ); # Slope
-   b0 = y1 - b1*x1; # Intercept
-   num = yN - b0;
-   xN = ( num )/b1;
-   xN
- }
-
- iRT = c(0, exp(1:5)/exp(5) )*4
- iPrb = pwiener( iRT, 1, a, w, v, 0, joint = 0)
-
- val = seq(0,4,length=100)
- tst = pwiener( val, 1, a, w, v, 0, joint = 0)
- x11(); plot( c(0,4), c(0,1), type='n', xlab='RT(s)', ylab=('CDF'), bty = 'l')
- lines(val,tst)
-
- rw = 0.13158
-
- lbt = iRT[1]; lbp = iPrb[1];
- ubt = iRT[2]; ubp = iPrb[2];
- cur_t = ubt; prb = ubp;
-
- points( c(lbt,ubt), c(lbp,ubp), col=c('red','blue'), pch = 19 )
- segments( lbt, lbp, ubt, ubp, lty = 2, col = 'pink' )
-
- prev_t = cur_t; prev_prb = prb;
- cur_t = linInterp2( rw, lbp, ubp, lbt, ubt )
- prb = pwiener( cur_t, 1, a, w, v, 0 )
- points( cur_t, prb, pch=19, col = 'orange' )
- abline( h=rw )
-
- if (prb < rw) {
-   lbp = prb;
-   lbt = cur_t;
- } else if ( lbp < prb ) {
-   ubp = prb;
-   ubt = cur_t;
- } else {
- lbp = prb;
- lbt = cur_t;
-  ubp = prev_prb;
-  ubt = prev_t;
- }
 
 */
