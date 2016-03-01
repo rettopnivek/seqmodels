@@ -27,28 +27,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// rwiener_choice
-double rwiener_choice(std::vector<double> par);
-RcppExport SEXP seqmodels_rwiener_choice(SEXP parSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< std::vector<double> >::type par(parSEXP);
-    __result = Rcpp::wrap(rwiener_choice(par));
-    return __result;
-END_RCPP
-}
-// rwiener_scl
-double rwiener_scl(std::vector<double> par);
-RcppExport SEXP seqmodels_rwiener_scl(SEXP parSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< std::vector<double> >::type par(parSEXP);
-    __result = Rcpp::wrap(rwiener_scl(par));
-    return __result;
-END_RCPP
-}
 // rdiff
 Rcpp::NumericVector rdiff(int N, Rcpp::NumericVector alpha, Rcpp::NumericVector theta, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector eta, Rcpp::NumericVector stheta, Rcpp::NumericVector stau, Rcpp::NumericVector sigma, double eps, double mxRT, double em_stop, double err, int parYes);
 RcppExport SEXP seqmodels_rdiff(SEXP NSEXP, SEXP alphaSEXP, SEXP thetaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP etaSEXP, SEXP sthetaSEXP, SEXP stauSEXP, SEXP sigmaSEXP, SEXP epsSEXP, SEXP mxRTSEXP, SEXP em_stopSEXP, SEXP errSEXP, SEXP parYesSEXP) {
@@ -70,6 +48,49 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type err(errSEXP);
     Rcpp::traits::input_parameter< int >::type parYes(parYesSEXP);
     __result = Rcpp::wrap(rdiff(N, alpha, theta, xi, tau, eta, stheta, stau, sigma, eps, mxRT, em_stop, err, parYes));
+    return __result;
+END_RCPP
+}
+// remg
+Rcpp::NumericVector remg(int N, Rcpp::NumericVector mu, Rcpp::NumericVector sigma, Rcpp::NumericVector lambda);
+RcppExport SEXP seqmodels_remg(SEXP NSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type lambda(lambdaSEXP);
+    __result = Rcpp::wrap(remg(N, mu, sigma, lambda));
+    return __result;
+END_RCPP
+}
+// demg
+Rcpp::NumericVector demg(Rcpp::NumericVector x, Rcpp::NumericVector mu, Rcpp::NumericVector sigma, Rcpp::NumericVector lambda, int ln);
+RcppExport SEXP seqmodels_demg(SEXP xSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP lambdaSEXP, SEXP lnSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< int >::type ln(lnSEXP);
+    __result = Rcpp::wrap(demg(x, mu, sigma, lambda, ln));
+    return __result;
+END_RCPP
+}
+// pemg
+Rcpp::NumericVector pemg(Rcpp::NumericVector x, Rcpp::NumericVector mu, Rcpp::NumericVector sigma, Rcpp::NumericVector lambda);
+RcppExport SEXP seqmodels_pemg(SEXP xSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type lambda(lambdaSEXP);
+    __result = Rcpp::wrap(pemg(x, mu, sigma, lambda));
     return __result;
 END_RCPP
 }

@@ -16,6 +16,10 @@ variability is calculated using adaptive quadrature numerical
 integration routines from the GSL QUADPACK.
 
 References:
+Blurton, S. P., Kesselmeier, M., & Gondan, M. (2012). Fast and
+  accurate calculations for cumulative first-passage time distributions
+  in Wiener diffusion models. Journal of Mathematical Psychology,
+  56, 470-475.
 Navarro, D. J., & Fuss, I. G. (2009). Fast and
   accurate calculations for first-passage times in
   Wiener diffusion models. Journal of Mathematical
@@ -680,13 +684,13 @@ struct ddiffWorker : public Worker
 //' For unequal vector lengths, values are recycled.
 //'
 //' @section References:
-//' Navarro, D. J., & Fuss, I. G. (2009). Fast and accurate calculations
-//'   for first-passage times in Wiener diffusion models. Journal of
-//'   Mathematical Psychology, 53, 222-230.
 //' Blurton, S. P., Kesselmeier, M., & Gondan, M. (2012). Fast and
 //'   accurate calculations for cumulative first-passage time distributions
 //'   in Wiener diffusion models. Journal of Mathematical Psychology,
 //'   56, 470-475.
+//' Navarro, D. J., & Fuss, I. G. (2009). Fast and accurate calculations
+//'   for first-passage times in Wiener diffusion models. Journal of
+//'   Mathematical Psychology, 53, 222-230.
 //' Ratcliff, R., & Tuerlinckx, F. (2002). Estimating parameters of the
 //'   diffusion model: Approaches to dealing with contaminant reaction
 //'   times and parameter variability. Psychonomic Bulletin & Review, 9,

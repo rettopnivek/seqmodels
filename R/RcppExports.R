@@ -7,34 +7,56 @@ pdiff <- function(rt, ch, alpha, theta, xi, tau, eta = as.numeric( c(0.0)), sthe
     .Call('seqmodels_pdiff', PACKAGE = 'seqmodels', rt, ch, alpha, theta, xi, tau, eta, stheta, stau, sigma, eps, parYes)
 }
 
-#' Title
-#'
-#' Short description.
-#'
-#' @param variable description of variable.
-#'
-#' @return Function's return value(s).
-#' @export
-rwiener_choice <- function(par) {
-    .Call('seqmodels_rwiener_choice', PACKAGE = 'seqmodels', par)
-}
-
-#' Title
-#'
-#' Short description.
-#'
-#' @param variable description of variable.
-#'
-#' @return Function's return value(s).
-#' @export
-rwiener_scl <- function(par) {
-    .Call('seqmodels_rwiener_scl', PACKAGE = 'seqmodels', par)
-}
-
 #' @rdname ddiff
 #' @export
 rdiff <- function(N, alpha, theta, xi, tau, eta = as.numeric( c(0.0)), stheta = as.numeric( c(0.0)), stau = as.numeric( c(0.0)), sigma = as.numeric( c(1.0)), eps = 1e-29, mxRT = 4.0, em_stop = 20, err = .0001, parYes = 1L) {
     .Call('seqmodels_rdiff', PACKAGE = 'seqmodels', N, alpha, theta, xi, tau, eta, stheta, stau, sigma, eps, mxRT, em_stop, err, parYes)
+}
+
+#' The Exponentially Modified Gaussian Distribution
+#'
+#' Random generation, density, distribution, and quantile functions for
+#' the distribution of the convolution of gaussian and exponential
+#' random varibles.
+#'
+#' @param N the number of draws for random generation.
+#' @param x a vector of quantiles.
+#' @param mu a vector of the means for the gaussian variable.
+#' @param sigma a vector of standard deviations for the gaussian variable
+#'   (sigma > 0).
+#' @param lambda a vector of rates for the exponential variable
+#'   (lambda > 0).
+#' @param ln indicates whether the log-likelihood should be returned,
+#'   where 1 = True, 0 = False (the default).
+#'
+#' @section Details:
+#' An exponentially modified gaussian distribution describes the sum of
+#' independent normal and exponential random variables, possessing
+#' a characteristic positive skew due to the exponential variable.
+#'
+#' For unequal vector lengths, values are recycled.
+#'
+#' @section References:
+#' Forthcoming
+#'
+#' @examples
+#' Forthcoming
+#'
+#' @export
+remg <- function(N, mu, sigma, lambda) {
+    .Call('seqmodels_remg', PACKAGE = 'seqmodels', N, mu, sigma, lambda)
+}
+
+#' @rdname remg
+#' @export
+demg <- function(x, mu, sigma, lambda, ln = 0L) {
+    .Call('seqmodels_demg', PACKAGE = 'seqmodels', x, mu, sigma, lambda, ln)
+}
+
+#' @rdname remg
+#' @export
+pemg <- function(x, mu, sigma, lambda) {
+    .Call('seqmodels_pemg', PACKAGE = 'seqmodels', x, mu, sigma, lambda)
 }
 
 #' @useDynLib seqmodels
@@ -43,7 +65,7 @@ NULL
 
 #' The Ratcliff diffusion model
 #'
-#' Density, distribution, random generation, and quantile functions
+#' Density, distribution, and random generation functions
 #' for the diffusion model (e.g. Ratcliff & Tuerlinckx, 2002).
 #'
 #' @param rt a vector of responses times ( rt > 0 ).
@@ -72,6 +94,9 @@ NULL
 #'   ( default is 1e-29 ).
 #' @param ln indicates whether the likelihood (ln = 0 ) or the
 #'   log-likelihood ( ln = 1 ) should be calculated ( default is 0 ).
+#' @param mxRT the maximum RT response time value that the algorithm is applied to.
+#' @param em_step the maximum number of iterations for the linear interpolation.
+#' @param err the desired degree of precision for the linear interpolation.
 #'
 #' @section Details:
 #' The density function is based on the implementation of Navarro
@@ -81,9 +106,13 @@ NULL
 #' For unequal vector lengths, values are recycled.
 #'
 #' @section References:
+#' Blurton, S. P., Kesselmeier, M., & Gondan, M. (2012). Fast and
+#'   accurate calculations for cumulative first-passage time distributions
+#'   in Wiener diffusion models. Journal of Mathematical Psychology,
+#'   56, 470-475.
 #' Navarro, D. J., & Fuss, I. G. (2009). Fast and accurate calculations
 #'   for first-passage times in Wiener diffusion models. Journal of
-#'   Mathematical Psychology, 53(4), 222-230.
+#'   Mathematical Psychology, 53, 222-230.
 #' Ratcliff, R., & Tuerlinckx, F. (2002). Estimating parameters of the
 #'   diffusion model: Approaches to dealing with contaminant reaction
 #'   times and parameter variability. Psychonomic Bulletin & Review, 9,

@@ -19,6 +19,10 @@ parameter variability is calculated using adaptive quadrature numerical
 integration routines from the GSL QUADPACK.
 
 References:
+Blurton, S. P., Kesselmeier, M., & Gondan, M. (2012). Fast and
+  accurate calculations for cumulative first-passage time distributions
+  in Wiener diffusion models. Journal of Mathematical Psychology,
+  56, 470-475.
 Ratcliff, R., & Tuerlinckx, F. (2002). Estimating parameters of the
   diffusion model: Approaches to dealing with contaminant reaction
   times and parameter variability. Psychonomic Bulletin & Review, 9,
@@ -37,23 +41,26 @@ Lookup - 06:  Fs0_lower
 Lookup - 07:  Fs_lower
 Lookup - 08:  F_lower
 Lookup - 09:  pwiener_scl
-Lookup - 10:
-Lookup - 11:
-Lookup - 12:
-Lookup - 13:
-Lookup - 14:
-Lookup - 15:
-Lookup - 16:
-Lookup - 17:
-Lookup - 18:
-Lookup - 19:
-Lookup - 20:
-Lookup - 21:
-Lookup - 22:
+Lookup - 10:  pw_vxi_scl
+Lookup - 11:  pw_vtheta_scl
+Lookup - 12:  pw_vtau_scl
+Lookup - 13:  pw_var
+Lookup - 14:  pw_vxi_vtheta_scl
+Lookup - 15:  pw_vxi_vtau_scl
+Lookup - 16:  pw_vtheta_vtau_scl
+Lookup - 17:  pw_var2
+Lookup - 18:  pw_vxi_vtheta_vtau_scl
+Lookup - 19:  pw_var3
+Lookup - 20:  piff_wrapper
+Lookup - 21:  pdiffWorker
+Lookup - 22:  pdiff
+Lookup - 23:  rwiener_choice
+Lookup - 24:  rwiener_scl
+Lookup - 25:  rdiffWorker
+Lookup - 26:  rdiff
 
 ### TO DO ###
 Update references
-Update index
 Incorporate all variability into pdiffWrapper
 
 */
@@ -392,12 +399,10 @@ double pw_var(std::vector<double> par, double a,double b, int ver ) {
     // small times. Therefore, ff the cdf is very tiny for the regular
     // wiener process, don't integrate.
     int runIntegration = 1;
-    if ( ver == 2 ) {
-      double tmp = pwiener_scl( par );
-      if ( tmp < 1e-5 ) {
-        runIntegration = 0;
-        result = tmp;
-      }
+    double tmp = pwiener_scl( par );
+    if ( tmp < 1e-5 ) {
+      runIntegration = 0;
+      result = tmp;
     }
     if ( runIntegration == 1) {
       gsl_integration_qags (&F, a, b, 0, 1e-7, 1000,
@@ -629,6 +634,26 @@ double piff_wrapper( std::vector<double> par ) {
   if (ver == 4) {
     out = pw_var( par, par[5] - par[9]/2.0,
                   par[5] + par[9]/2.0, 4 );
+  }
+  // Variability in drift and starting point
+  if (ver == 5) {
+    out = pw_var2( par, par[3] - par[8]/2.0,
+                   par[3] + par[8]/2.0, 5 );
+  }
+  // Variability in drift and residual latency
+  if (ver == 6) {
+    out = pw_var2( par, par[5] - par[9]/2.0,
+                   par[5] + par[9]/2.0, 6 );
+  }
+  // Variability in starting point and residual latency
+  if (ver == 7) {
+    out = pw_var2( par, par[5] - par[9]/2.0,
+                   par[5] + par[9]/2.0, 7 );
+  }
+  // Variability in starting point and residual latency
+  if (ver == 8) {
+    out = pw_var3( par, par[5] - par[9]/2.0,
+                   par[5] + par[9]/2.0, 7 );
   }
 
   return( out );
@@ -1127,10 +1152,3 @@ Rcpp::NumericVector rdiff( int N,
 
   return( output );
 }
-
-
-
-/*
-
-
-*/

@@ -55,11 +55,17 @@ coefficient ( sigma > 0 ).}
 \item{eps}{the margin of error for the infinite sums being calculated
 ( default is 1e-29 ).}
 
+\item{mxRT}{the maximum RT response time value that the algorithm is applied to.}
+
+\item{err}{the desired degree of precision for the linear interpolation.}
+
 \item{ln}{indicates whether the likelihood (ln = 0 ) or the
 log-likelihood ( ln = 1 ) should be calculated ( default is 0 ).}
+
+\item{em_step}{the maximum number of iterations for the linear interpolation.}
 }
 \description{
-Density, distribution, random generation, and quantile functions
+Density, distribution, and random generation functions
 for the diffusion model (e.g. Ratcliff & Tuerlinckx, 2002).
 }
 \section{Details}{
@@ -73,9 +79,13 @@ For unequal vector lengths, values are recycled.
 
 \section{References}{
 
+Blurton, S. P., Kesselmeier, M., & Gondan, M. (2012). Fast and
+  accurate calculations for cumulative first-passage time distributions
+  in Wiener diffusion models. Journal of Mathematical Psychology,
+  56, 470-475.
 Navarro, D. J., & Fuss, I. G. (2009). Fast and accurate calculations
   for first-passage times in Wiener diffusion models. Journal of
-  Mathematical Psychology, 53(4), 222-230.
+  Mathematical Psychology, 53, 222-230.
 Ratcliff, R., & Tuerlinckx, F. (2002). Estimating parameters of the
   diffusion model: Approaches to dealing with contaminant reaction
   times and parameter variability. Psychonomic Bulletin & Review, 9,
