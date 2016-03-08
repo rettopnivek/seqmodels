@@ -3,4 +3,11 @@ PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=1
 PKG_LIBS += $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" \
               -e "RcppParallel::RcppParallelLibs()")
 
+## PKG_LIBS += -L$/gsl/lib/x64 -lgsl -lgslcblas $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()")
+
+## Checks if 64-bit or 32-bit
+ifeq "$(WIN)" "64"
 PKG_LIBS += -L$/gsl/lib/x64 -lgsl -lgslcblas $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()")
+else
+PKG_LIBS += -L$/gsl/lib/i386 -lgsl -lgslcblas $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()")
+endif
