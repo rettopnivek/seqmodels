@@ -10,11 +10,15 @@ using namespace RcppParallel;
 
 /*
 Purpose:
-Assorted functions for the calculation of the probability density
-function of the Wald Race model (Logan et al., 2014) as well as
-its simulation.
+Assorted functions for the calculation of the density, distribution,
+quantile, and random number generation functions of the inverse
+gaussian and diffusion race model (Logan et al., 2014).
 
 References:
+Johnson, N. L., Kotz, S., & Balakrishnan, N. (1994). Inverse Gaussian
+  (Wald) distributions. In N. L. Johnson, S. Kotz, & N. Balakrishnan
+  (Eds.), Continuous univariate distributions (2nd ed., Vol. 1, pp.
+  259-297). New York: Wiley.
 Logan, G. D., Van Zandt, T., Verbruggen, F., & Wagenmakers, E. J. (2014).
   On the ability to inhibit thought and action: General and special theories
   of an act of control. Psychological Review, 121(1), 66-95.
@@ -44,8 +48,8 @@ Lookup - 17:  qwaldraceWorker
 Lookup - 18:  qwaldrace
 
 ### TO DO ###
-Add references for inverse gaussian
 Add examples for Wald race model
+Add parameter variability for threshold and drift rate
 */
 
 // Lookup - 01
@@ -81,8 +85,8 @@ double rinvgauss_scl(double kappa, double xi, double sigma) {
 // Lookup - 02
 //' The Inverse Gaussian Distribution
 //'
-//' Random generation, density, distribution, and quantile functions for
-//' the inverse gaussian (or Wald) distribution.
+//' Random generation, density, distribution, and quantile functions
+//' for the inverse gaussian (or Wald) distribution.
 //'
 //' @param N the number of draws for random generation.
 //' @param t a vector of quantiles (typically response times).
@@ -110,6 +114,10 @@ double rinvgauss_scl(double kappa, double xi, double sigma) {
 //' For unequal vector lengths, values are recycled.
 //'
 //' @section References:
+//' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1994). Inverse Gaussian
+//'   (Wald) distributions. In N. L. Johnson, S. Kotz, & N. Balakrishnan
+//'   (Eds.), Continuous univariate distributions (2nd ed., Vol. 1, pp.
+//'   259-297). New York: Wiley.
 //' Michael, J. R., Schucany, W. R., & Haas, R. W. (1976). Generating
 //'   random variates using transformations with multiple roots.
 //'   The American Statistician, 30 (2), 88-90. doi:10.2307/2683801.
@@ -500,6 +508,7 @@ Rcpp::NumericVector qinvgauss(Rcpp::NumericVector p,
 //' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
 //' @param s0 the within trial variability for choices == 0 (s0 > 0).
 //' @param s1 the within trial variability for choices == 1 (s1 > 0).
+//' @param rl if 1, the residual latency impacts the decision rule.
 //' @param ln indicates whether the log-likelihood should be returned,
 //'   where 1 = True, 0 = False (the default).
 //' @param mxRT the maximum RT response time value that the algorithm is applied to.
@@ -564,8 +573,9 @@ Rcpp::NumericMatrix rwaldrace (int N, Rcpp::NumericVector k1,
                                Rcpp::NumericVector tau0,
                                Rcpp::NumericVector s1 =
                                  Rcpp::NumericVector::create(1.0),
-                                 Rcpp::NumericVector s0 =
-                                   Rcpp::NumericVector::create(1.0) ) {
+                               Rcpp::NumericVector s0 =
+                                   Rcpp::NumericVector::create(1.0),
+                               int rl = 0 ) {
 
   int N_k1 = k1.size(); // Number of parameters
   int N_xi1 = xi1.size();
@@ -646,16 +656,24 @@ Rcpp::NumericMatrix rwaldrace (int N, Rcpp::NumericVector k1,
       double t0 = rinvgauss_scl(k0_v(n),
                                 xi0_v(n),s0_v(n));
 
+      // If the residual latency impacts the decision rule
+      if ( rl == 1 ) {
+        t1 = t1 + tau1_v(n);
+        t0 = t0 + tau0_v(n);
+      }
+
       double rt = -1.0;
       double ch = -1.0;
 
       // Determine the winning accumulator
       if (t1 < t0) {
-        rt = t1 + tau1_v(n);
+        rt = t1;
+        if ( rl == 0 ) rt = rt + tau1_v(n);
         ch = 1;
       }
       if (t1 > t0) {
-        rt = t0 + tau0_v(n);
+        rt = t0;
+        if ( rl == 0 ) rt = rt + tau0_v(n);
         ch = 0;
       }
 
@@ -675,15 +693,18 @@ Rcpp::NumericMatrix rwaldrace (int N, Rcpp::NumericVector k1,
 
 double dwaldrace_scl (double rt, double ch, double k1, double xi1,
                       double s1, double tau1, double k0, double xi0,
-                      double s0, double tau0, int ln = 0) {
+                      double s0, double tau0, int rl = 0, int ln = 0) {
 
-  // If residual latency impacts decisions
-  // double dt = rt - ch*tau1 - (1-ch)*tau0;
-  // double pt = rt - ch*tau0 - (1-ch)*tau1;
-
-  // If residual latency is separate
-  double dt = rt - ch*tau1 - (1-ch)*tau0;
-  double pt = rt - ch*tau1 - (1-ch)*tau0;
+  double dt; double pt;
+  if ( rl == 1 ) {
+    // If residual latency impacts decisions
+    dt = rt - ch*tau1 - (1-ch)*tau0;
+    pt = rt - ch*tau0 - (1-ch)*tau1;
+  } else {
+    // If residual latency is separate
+    dt = rt - ch*tau1 - (1-ch)*tau0;
+    pt = rt - ch*tau1 - (1-ch)*tau0;
+  }
 
   double dxi = ch*(xi1) + (1-ch)*xi0;
   double pxi = ch*(xi0) + (1-ch)*xi1;
@@ -722,7 +743,7 @@ Rcpp::NumericVector dwaldrace (Rcpp::NumericVector rt,
                                  Rcpp::NumericVector::create(1.0),
                                  Rcpp::NumericVector s0 =
                                    Rcpp::NumericVector::create(1.0),
-                         int ln = 0) {
+                               int rl = 0, int ln = 0) {
 
   int N_rt = rt.size(); // Number of response times
   int N_ch = ch.size(); // Number of choices
@@ -806,7 +827,7 @@ Rcpp::NumericVector dwaldrace (Rcpp::NumericVector rt,
   for (int n = 0; n < N; n++) {
     out(n) = dwaldrace_scl(rt_v(n), ch_v(n), k1_v(n), xi1_v(n),
         s1_v(n), tau1_v(n), k0_v(n), xi0_v(n),
-        s0_v(n), tau0_v(n), ln);
+        s0_v(n), tau0_v(n), rl, ln);
   }
 
   return ( out );
@@ -825,9 +846,10 @@ double int_dwaldrace_scl( double x, void * params) {
   double out = 0.0;
 
   // Calculate the density for the Wald race model
+  int rl = int( par[9] ); // Convert to integer
   out = dwaldrace_scl( x, par[0], par[1], par[2],
                        par[3], par[4], par[5], par[6],
-                       par[7], par[8], 0 );
+                       par[7], par[8], rl, 0 );
 
   return out;
 }
@@ -899,7 +921,7 @@ struct pwaldraceWorker : public Worker
 
       double cur_rt = input(j,0); // Extract RT
 
-      std::vector<double> par(9); // Extract parameters
+      std::vector<double> par(10); // Extract parameters
       for (int i = 1; i < 10; i++) { par[i-1] = input(j,i); }
 
       output[j] = pwaldrace_scl( par, 0.0, cur_rt );
@@ -923,7 +945,7 @@ Rcpp::NumericVector pwaldrace ( Rcpp::NumericVector rt,
                                 Rcpp::NumericVector::create(1.0),
                                 Rcpp::NumericVector s0 =
                                   Rcpp::NumericVector::create(1.0),
-                                int parYes = 1 ) {
+                                double rl = 0.0, int parYes = 1 ) {
 
   int N_rt = rt.size(); // Number of response times
   int N_ch = ch.size(); // Number of choices
@@ -963,7 +985,7 @@ Rcpp::NumericVector pwaldrace ( Rcpp::NumericVector rt,
   Rcpp::NumericVector output(N);
 
   // Set input matrix for parameters
-  Rcpp::NumericMatrix input(N,10);
+  Rcpp::NumericMatrix input(N,11);
 
   // Loop through observations
   for (int nv = 0; nv < N; nv++) {
@@ -978,6 +1000,7 @@ Rcpp::NumericVector pwaldrace ( Rcpp::NumericVector rt,
     input(nv,7) = xi0(xi0_inc);
     input(nv,8) = s0(s0_inc);
     input(nv,9) = tau0(tau0_inc);
+    input(nv,10) = rl;
 
     rt_inc = rt_inc + 1;
     ch_inc = ch_inc + 1;
@@ -1007,8 +1030,8 @@ Rcpp::NumericVector pwaldrace ( Rcpp::NumericVector rt,
     for (int j = 0; j < N; j++) {
 
       double cur_rt = input(j,0);
-      std::vector<double> par(9);
-      for (int i = 1; i < 10; i++) { par[i-1] = input(j,i); }
+      std::vector<double> par(11);
+      for (int i = 1; i < 11; i++) { par[i-1] = input(j,i); }
 
       output(j) = pwaldrace_scl( par, 0.0, cur_rt );
     }
@@ -1032,14 +1055,14 @@ Rcpp::NumericVector pwaldrace ( Rcpp::NumericVector rt,
 double qwaldrace_scl( std::vector<double> prm ) {
 
   double p = prm[0]; // The CDF value to invert
-  double mxRT = prm[10];
-  int em_stop = prm[11];
-  double err = prm[12];
-  int joint = prm[13];
+  double mxRT = prm[11];
+  int em_stop = prm[12];
+  double err = prm[13];
+  int joint = prm[14];
   double cur_t = 0.0; // Initialize output
 
-  std::vector<double> par(9);
-  for ( int k = 1; k < 10; k++ ) {
+  std::vector<double> par(10);
+  for ( int k = 1; k < 11; k++ ) {
     par[k-1] = prm[k];
   }
 
@@ -1126,8 +1149,8 @@ struct qwaldraceWorker : public Worker
 
     for(std::size_t j = begin; j < end; j++) {
 
-      std::vector<double> par(14); // Extract parameters
-      for (int i = 0; i < 14; i++) { par[i] = input(j,i); }
+      std::vector<double> par(15); // Extract parameters
+      for (int i = 0; i < 15; i++) { par[i] = input(j,i); }
 
       output[j] = qwaldrace_scl( par );
     }
@@ -1150,6 +1173,7 @@ Rcpp::NumericVector qwaldrace ( Rcpp::NumericVector p,
                                   Rcpp::NumericVector::create(1.0),
                                 Rcpp::NumericVector s0 =
                                   Rcpp::NumericVector::create(1.0),
+                                double rl = 0.0,
                                 double mxRT = 4.0,
                                 double em_stop = 20.0,
                                 double err = 0.001,
@@ -1194,7 +1218,7 @@ Rcpp::NumericVector qwaldrace ( Rcpp::NumericVector p,
   Rcpp::NumericVector output(N);
 
   // Set input matrix for parameters
-  Rcpp::NumericMatrix input(N,14);
+  Rcpp::NumericMatrix input(N,15);
 
   // Loop through observations
   for (int nv = 0; nv < N; nv++) {
@@ -1209,11 +1233,12 @@ Rcpp::NumericVector qwaldrace ( Rcpp::NumericVector p,
     input(nv,7) = xi0(xi0_inc);
     input(nv,8) = s0(s0_inc);
     input(nv,9) = tau0(tau0_inc);
+    input(nv,10) = rl;
 
-    input(nv,10) = mxRT;
-    input(nv,11) = em_stop;
-    input(nv,12) = err;
-    input(nv,13) = joint;
+    input(nv,11) = mxRT;
+    input(nv,12) = em_stop;
+    input(nv,13) = err;
+    input(nv,14) = joint;
 
     p_inc = p_inc + 1;
     ch_inc = ch_inc + 1;
@@ -1242,8 +1267,8 @@ Rcpp::NumericVector qwaldrace ( Rcpp::NumericVector p,
 
     for (int j = 0; j < N; j++) {
 
-      std::vector<double> par(14); // Extract parameters
-      for (int i = 1; i < 14; i++) { par[i] = input(j,i); }
+      std::vector<double> par(15); // Extract parameters
+      for (int i = 1; i < 15; i++) { par[i] = input(j,i); }
 
       output(j) = qwaldrace_scl( par );
     }

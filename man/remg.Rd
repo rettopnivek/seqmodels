@@ -3,6 +3,7 @@
 \name{remg}
 \alias{demg}
 \alias{pemg}
+\alias{qemg}
 \alias{remg}
 \title{The Exponentially Modified Gaussian Distribution}
 \usage{
@@ -11,6 +12,9 @@ remg(N, mu, sigma, lambda)
 demg(x, mu, sigma, lambda, ln = 0L)
 
 pemg(x, mu, sigma, lambda)
+
+qemg(p, mu, sigma, lambda, mnRT = -1, mxRT = 4, em_stop = 20L,
+  err = 0.001)
 }
 \arguments{
 \item{N}{the number of draws for random generation.}

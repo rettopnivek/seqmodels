@@ -601,7 +601,7 @@ double diff_wrapper( std::vector<double> par ) {
     out = dw_var2( par, par[5] - par[9]/2.0,
                   par[5] + par[9]/2.0, 7 );
   }
-  // Variability in starting point and residual latency
+  // Variability in drift, starting point, and residual latency
   if (ver == 8) {
     out = dw_var3( par, par[5] - par[9]/2.0,
                    par[5] + par[9]/2.0, 7 );

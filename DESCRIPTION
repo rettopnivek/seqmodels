@@ -1,8 +1,8 @@
 Package: seqmodels
-Title: What the Package Does (one line, title case)
+Title: Distribution functions for sequential sampling models
 Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Authors@R: person("Kevin", "Potter", email = "kevin.w.potter@gmail.com", role = c("aut", "cre"))
+Description: Distribution, density, quantile, and random number generation functions for a collection of sequential sampling models.
 Depends:
     R (>= 3.0),
     RcppParallel

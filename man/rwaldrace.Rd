@@ -8,16 +8,16 @@
 \title{The Wald Race Model}
 \usage{
 rwaldrace(N, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)))
+  s0 = as.numeric(c(1)), rl = 0L)
 
 dwaldrace(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)), ln = 0L)
+  s0 = as.numeric(c(1)), rl = 0L, ln = 0L)
 
 pwaldrace(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)), parYes = 1L)
+  s0 = as.numeric(c(1)), rl = 0, parYes = 1L)
 
 qwaldrace(p, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)), mxRT = 4, em_stop = 20, err = 0.001,
+  s0 = as.numeric(c(1)), rl = 0, mxRT = 4, em_stop = 20, err = 0.001,
   joint = 1, parYes = 1L)
 }
 \arguments{
@@ -42,6 +42,8 @@ for choices == 0 (xi0 > 0).}
 \item{s1}{the within trial variability for choices == 1 (s1 > 0).}
 
 \item{s0}{the within trial variability for choices == 0 (s0 > 0).}
+
+\item{rl}{if 1, the residual latency impacts the decision rule.}
 
 \item{rt}{a vector of response times (rt > 0).}
 

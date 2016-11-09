@@ -1,11 +1,31 @@
-#include <Rcpp.h>  // Includes certain libraries of functions
+#include <Rcpp.h> // Includes certain libraries of functions
 #include <math.h>
 #include <limits>
 #include "miscfunctions.h" // Linear interpolation
 
 /*
+Purpose:
+Assorted functions for the calculation of the density, distribution,
+quantile, and random number generation functions of the exponentially
+modified gaussian distribution.
 
+References:
+Forthcoming
 
+Index
+Lookup - 01:  remg_scl
+Lookup - 02:  remg
+Lookup - 03:  demg_scl
+Lookup - 04:  demg
+Lookup - 05:  pemg_scl
+Lookup - 06:  pemg
+Lookup - 07:  qemg_scl
+Lookup - 08:  qemg
+
+### TO DO ###
+Add references for the exponentially modified gaussian
+Add examples
+Add quantile function
 */
 
 // Lookup - 01
@@ -106,7 +126,7 @@ Rcpp::NumericVector remg(int N, Rcpp::NumericVector mu,
   return( out );
 }
 
-// Lookup - 04
+// Lookup - 03
 // Scalar function for density of the convolution of an exponential
 // and gaussian random variable
 
@@ -135,7 +155,7 @@ double demg_scl( double x, double mu, double sigma,
   return( out );
 }
 
-// Lookup - 05
+// Lookup - 04
 //' @rdname remg
 //' @export
 // [[Rcpp::export]]
@@ -194,7 +214,7 @@ Rcpp::NumericVector demg(Rcpp::NumericVector x,
   return( out );
 }
 
-// Lookup - 06
+// Lookup - 05
 // Scalar function for CDF of the convolution of an exponential
 // and gaussian random variable
 
@@ -206,7 +226,8 @@ double pemg_scl( double x, double mu, double sigma,
 
   // Check for inadmissable variables
   if ( (lambda > 0.0) &&
-       (sigma > 0.0) ) {
+       (sigma > 0.0) &&
+       (x != R_NegInf) ) {
 
     double u = lambda*(x - mu);
     double v = lambda*sigma;
@@ -224,7 +245,7 @@ double pemg_scl( double x, double mu, double sigma,
   return( out );
 }
 
-// Lookup - 07
+// Lookup - 06
 //' @rdname remg
 //' @export
 // [[Rcpp::export]]
@@ -274,7 +295,7 @@ Rcpp::NumericVector pemg(Rcpp::NumericVector x,
     if (N_sigma==sigma_inc) sigma_inc = 0;
   }
 
-  // Determine density
+  // Determine CDF
   for (int n = 0; n < N; n++) {
     out(n) = pemg_scl( x_v(n), mu_v(n), sigma_v(n), lambda_v(n) );
   }
@@ -282,12 +303,137 @@ Rcpp::NumericVector pemg(Rcpp::NumericVector x,
   return( out );
 }
 
+// Lookup - 07
+// A scalar function that calculates the quantile given a cumulative probability
+// using linear interpolation.
+
+double qemg_scl( double p, double mu, double sigma, double lambda,
+                 double mnRT, double mxRT, int em_stop, double err ) {
+
+  double cur_t = mnRT; // Initialize output
+
+  // Define an initial set of RTs
+  std::vector<double> iRT(5);
+  for (int i = 0; i < 5; i++) {
+    iRT[i] = (i/5.0)*(mxRT-mnRT)+mnRT;
+  }
+
+  // Determine the associated CDF values
+  std::vector<double> iPrb(5);
+  for (int i = 0; i < 5; i++) {
+    iPrb[i] = pemg_scl( iRT[i], mu, sigma, lambda );
+  }
+
+  // Determine the initial window that the point falls between
+  int p0 = minMax( p, iPrb, 0 );
+  int p1 = minMax( p, iPrb, 1 );
+
+  double lbp = iPrb[p0]; double lbt = iRT[p0];
+  double ubp = iPrb[p1]; double ubt = iRT[p1];
+
+  double prev_t = ubt; double prev_prb = ubp;
+  cur_t = linInterp( p, lbp, ubp, lbt, ubt );
+  double prb = pemg_scl( cur_t, mu, sigma, lambda );
+
+  double epsilon = 1.0;
+  int cnt = 0;
+
+  while ( (cnt < em_stop) & (epsilon > err) ) {
+    if (prb < p) {
+      lbp = prb;
+      lbt = cur_t;
+    } else if ( lbp < prb ) {
+      ubp = prb;
+      ubt = cur_t;
+    } else {
+      lbp = prb;
+      lbt = cur_t;
+      ubp = prev_prb;
+      ubt = prev_t;
+    }
+    prev_t = cur_t; prev_prb = prb;
+    cur_t = linInterp( p, lbp, ubp, lbt, ubt );
+    prb = pemg_scl( cur_t, mu, sigma, lambda );
+
+    cnt = cnt + 1;
+    epsilon = std::abs( p - prb );
+
+  }
+
+  if (p==0.0) cur_t = R_NegInf;
+
+  return( cur_t );
+}
+
+
+// Lookup - 08
+//' @rdname remg
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector qemg ( Rcpp::NumericVector p,
+                                Rcpp::NumericVector mu,
+                                Rcpp::NumericVector sigma,
+                                Rcpp::NumericVector lambda,
+                                double mnRT = -1.0,
+                                double mxRT = 4.0,
+                                int em_stop = 20,
+                                double err = 0.001 ) {
+
+  int N_p = p.size(); // Number of observations
+  int N_mu = mu.size(); // Number of parameters
+  int N_lambda = lambda.size();
+  int N_sigma = sigma.size();
+
+  // Increment variables for loop
+  int p_inc = 0;
+  int mu_inc = 0;
+  int lambda_inc = 0;
+  int sigma_inc = 0;
+
+  // Determine the longest input vector
+  int N = max( Rcpp::NumericVector::create(N_p, N_mu,
+                                           N_lambda, N_sigma) );
+
+  // Set output vector
+  Rcpp::NumericVector out(N);
+
+  // Create vectors for the parameters
+  Rcpp::NumericVector p_v(N);
+  Rcpp::NumericVector mu_v(N);
+  Rcpp::NumericVector lambda_v(N);
+  Rcpp::NumericVector sigma_v(N);
+
+  // Loop through observations
+  for (int nv = 0; nv < N; nv++) {
+    p_v(nv) = p(p_inc);
+    mu_v(nv) = mu(mu_inc);
+    lambda_v(nv) = lambda(lambda_inc);
+    sigma_v(nv) = sigma(sigma_inc);
+
+    p_inc = p_inc + 1;
+    mu_inc = mu_inc + 1;
+    lambda_inc = lambda_inc + 1;
+    sigma_inc = sigma_inc + 1;
+    if (N_p==p_inc) p_inc = 0;
+    if (N_mu==mu_inc) mu_inc = 0;
+    if (N_lambda==lambda_inc) lambda_inc = 0;
+    if (N_sigma==sigma_inc) sigma_inc = 0;
+  }
+
+  // Determine density
+  for (int n = 0; n < N; n++) {
+    out(n) = qemg_scl( p_v(n), mu_v(n), sigma_v(n), lambda_v(n),
+        mnRT, mxRT, em_stop, err );
+  }
+
+  return ( out );
+}
 
 /*
 library(seqmodels)
 
 # Define generating parameters
-prm = c( mu = .5, sigma = .5, lambda = 4 )
+prm = c( mu = -1, sigma = 1, lambda = .25 )
 
 # Simulate values
 N = 10000 # Number of draws
@@ -301,7 +447,7 @@ den = density(sim.test)
 lines( den$x, den$y, lty = 2, lwd = 2 )
 
 # Add density
-x = seq( -4, 6, length = 1000 )
+x = seq( -4, max(sim), length = 1000 )
 lines( x, demg( x, prm[1], prm[2], prm[3] ), col ='orange', lwd = 2 )
 
 # CDF
@@ -310,6 +456,9 @@ p = p/length(sim)
 x11();
 plot( sort(sim), p, type = 'l', xlab = 'x', ylab = 'CDF', bty = 'l' )
 lines( x, pemg(x,prm[1],prm[2],prm[3]), col='orange', lwd = 2 )
-
-
+prb = seq(.1,.9,.1)
+obs = quantile( sim, prb )
+points( obs, prb, pch = 15, cex = 1.5 )
+pred = qemg( prb, prm[1], prm[2], prm[3], mxRT = max(sim) )
+points( pred, prb, pch = 19, cex = .75, col = 'red' )
 */

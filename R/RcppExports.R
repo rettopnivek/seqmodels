@@ -59,6 +59,12 @@ pemg <- function(x, mu, sigma, lambda) {
     .Call('seqmodels_pemg', PACKAGE = 'seqmodels', x, mu, sigma, lambda)
 }
 
+#' @rdname remg
+#' @export
+qemg <- function(p, mu, sigma, lambda, mnRT = -1.0, mxRT = 4.0, em_stop = 20L, err = 0.001) {
+    .Call('seqmodels_qemg', PACKAGE = 'seqmodels', p, mu, sigma, lambda, mnRT, mxRT, em_stop, err)
+}
+
 #' @useDynLib seqmodels
 #' @importFrom Rcpp sourceCpp
 NULL
@@ -125,8 +131,8 @@ ddiff <- function(rt, ch, alpha, theta, xi, tau, eta = as.numeric( c(0.0)), sthe
 
 #' The Inverse Gaussian Distribution
 #'
-#' Random generation, density, distribution, and quantile functions for
-#' the inverse gaussian (or Wald) distribution.
+#' Random generation, density, distribution, and quantile functions
+#' for the inverse gaussian (or Wald) distribution.
 #'
 #' @param N the number of draws for random generation.
 #' @param t a vector of quantiles (typically response times).
@@ -154,6 +160,10 @@ ddiff <- function(rt, ch, alpha, theta, xi, tau, eta = as.numeric( c(0.0)), sthe
 #' For unequal vector lengths, values are recycled.
 #'
 #' @section References:
+#' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1994). Inverse Gaussian
+#'   (Wald) distributions. In N. L. Johnson, S. Kotz, & N. Balakrishnan
+#'   (Eds.), Continuous univariate distributions (2nd ed., Vol. 1, pp.
+#'   259-297). New York: Wiley.
 #' Michael, J. R., Schucany, W. R., & Haas, R. W. (1976). Generating
 #'   random variates using transformations with multiple roots.
 #'   The American Statistician, 30 (2), 88-90. doi:10.2307/2683801.
@@ -223,6 +233,7 @@ qinvgauss <- function(p, kappa, xi, sigma, mxT = 4.0, em_stop = 20L, err = .0001
 #' @param tau0 the residual latency for choices == 0 (tau0 >= 0).
 #' @param s0 the within trial variability for choices == 0 (s0 > 0).
 #' @param s1 the within trial variability for choices == 1 (s1 > 0).
+#' @param rl if 1, the residual latency impacts the decision rule.
 #' @param ln indicates whether the log-likelihood should be returned,
 #'   where 1 = True, 0 = False (the default).
 #' @param mxRT the maximum RT response time value that the algorithm is applied to.
@@ -278,25 +289,25 @@ qinvgauss <- function(p, kappa, xi, sigma, mxT = 4.0, em_stop = 20L, err = .0001
 #' segments( qnt,rep(0,length(prb)), qnt, prb )
 #'
 #' @export
-rwaldrace <- function(N, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0))) {
-    .Call('seqmodels_rwaldrace', PACKAGE = 'seqmodels', N, k1, xi1, tau1, k0, xi0, tau0, s1, s0)
+rwaldrace <- function(N, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = 0L) {
+    .Call('seqmodels_rwaldrace', PACKAGE = 'seqmodels', N, k1, xi1, tau1, k0, xi0, tau0, s1, s0, rl)
 }
 
 #' @rdname rwaldrace
 #' @export
-dwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), ln = 0L) {
-    .Call('seqmodels_dwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, ln)
+dwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = 0L, ln = 0L) {
+    .Call('seqmodels_dwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, rl, ln)
 }
 
 #' @rdname rwaldrace
 #' @export
-pwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), parYes = 1L) {
-    .Call('seqmodels_pwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, parYes)
+pwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = 0.0, parYes = 1L) {
+    .Call('seqmodels_pwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, rl, parYes)
 }
 
 #' @rdname rwaldrace
 #' @export
-qwaldrace <- function(p, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), mxRT = 4.0, em_stop = 20.0, err = 0.001, joint = 1.0, parYes = 1L) {
-    .Call('seqmodels_qwaldrace', PACKAGE = 'seqmodels', p, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, mxRT, em_stop, err, joint, parYes)
+qwaldrace <- function(p, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = 0.0, mxRT = 4.0, em_stop = 20.0, err = 0.001, joint = 1.0, parYes = 1L) {
+    .Call('seqmodels_qwaldrace', PACKAGE = 'seqmodels', p, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, rl, mxRT, em_stop, err, joint, parYes)
 }
 

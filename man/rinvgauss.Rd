@@ -42,8 +42,8 @@ used in the quantile function.}
 interpolation used in the quantile function.}
 }
 \description{
-Random generation, density, distribution, and quantile functions for
-the inverse gaussian (or Wald) distribution.
+Random generation, density, distribution, and quantile functions
+for the inverse gaussian (or Wald) distribution.
 }
 \section{Details}{
 
@@ -57,6 +57,10 @@ For unequal vector lengths, values are recycled.
 
 \section{References}{
 
+Johnson, N. L., Kotz, S., & Balakrishnan, N. (1994). Inverse Gaussian
+  (Wald) distributions. In N. L. Johnson, S. Kotz, & N. Balakrishnan
+  (Eds.), Continuous univariate distributions (2nd ed., Vol. 1, pp.
+  259-297). New York: Wiley.
 Michael, J. R., Schucany, W. R., & Haas, R. W. (1976). Generating
   random variates using transformations with multiple roots.
   The American Statistician, 30 (2), 88-90. doi:10.2307/2683801.
