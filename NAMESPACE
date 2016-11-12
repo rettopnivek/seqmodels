@@ -3,7 +3,7 @@
 export(ddiff)
 export(demg)
 export(dinvgauss)
-export(dist_curve)
+export(dist_plot)
 export(dwaldrace)
 export(pdiff)
 export(pemg)
