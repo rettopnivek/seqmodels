@@ -216,7 +216,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dwaldrace
-Rcpp::NumericVector dwaldrace(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector k1, Rcpp::NumericVector xi1, Rcpp::NumericVector tau1, Rcpp::NumericVector k0, Rcpp::NumericVector xi0, Rcpp::NumericVector tau0, Rcpp::NumericVector s1, Rcpp::NumericVector s0, int rl, int ln);
+Rcpp::NumericVector dwaldrace(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector k1, Rcpp::NumericVector xi1, Rcpp::NumericVector tau1, Rcpp::NumericVector k0, Rcpp::NumericVector xi0, Rcpp::NumericVector tau0, Rcpp::NumericVector s1, Rcpp::NumericVector s0, double rl, int ln);
 RcppExport SEXP seqmodels_dwaldrace(SEXP rtSEXP, SEXP chSEXP, SEXP k1SEXP, SEXP xi1SEXP, SEXP tau1SEXP, SEXP k0SEXP, SEXP xi0SEXP, SEXP tau0SEXP, SEXP s1SEXP, SEXP s0SEXP, SEXP rlSEXP, SEXP lnSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -231,7 +231,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau0(tau0SEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type s1(s1SEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type s0(s0SEXP);
-    Rcpp::traits::input_parameter< int >::type rl(rlSEXP);
+    Rcpp::traits::input_parameter< double >::type rl(rlSEXP);
     Rcpp::traits::input_parameter< int >::type ln(lnSEXP);
     __result = Rcpp::wrap(dwaldrace(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, rl, ln));
     return __result;

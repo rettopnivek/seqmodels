@@ -693,10 +693,11 @@ Rcpp::NumericMatrix rwaldrace (int N, Rcpp::NumericVector k1,
 
 double dwaldrace_scl (double rt, double ch, double k1, double xi1,
                       double s1, double tau1, double k0, double xi0,
-                      double s0, double tau0, int rl = 0, int ln = 0) {
+                      double s0, double tau0, double rl = 0,
+                      int ln = 0) {
 
   double dt; double pt;
-  if ( rl == 1 ) {
+  if ( rl == 1.0 ) {
     // If residual latency impacts decisions
     dt = rt - ch*tau1 - (1-ch)*tau0;
     pt = rt - ch*tau0 - (1-ch)*tau1;
@@ -743,7 +744,7 @@ Rcpp::NumericVector dwaldrace (Rcpp::NumericVector rt,
                                  Rcpp::NumericVector::create(1.0),
                                  Rcpp::NumericVector s0 =
                                    Rcpp::NumericVector::create(1.0),
-                               int rl = 0, int ln = 0) {
+                               double rl = 0.0, int ln = 0) {
 
   int N_rt = rt.size(); // Number of response times
   int N_ch = ch.size(); // Number of choices
@@ -846,10 +847,9 @@ double int_dwaldrace_scl( double x, void * params) {
   double out = 0.0;
 
   // Calculate the density for the Wald race model
-  int rl = int( par[9] ); // Convert to integer
   out = dwaldrace_scl( x, par[0], par[1], par[2],
                        par[3], par[4], par[5], par[6],
-                       par[7], par[8], rl, 0 );
+                       par[7], par[8], par[9], 0 );
 
   return out;
 }
@@ -922,7 +922,7 @@ struct pwaldraceWorker : public Worker
       double cur_rt = input(j,0); // Extract RT
 
       std::vector<double> par(10); // Extract parameters
-      for (int i = 1; i < 10; i++) { par[i-1] = input(j,i); }
+      for (int i = 1; i < 11; i++) { par[i-1] = input(j,i); }
 
       output[j] = pwaldrace_scl( par, 0.0, cur_rt );
     }

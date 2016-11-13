@@ -295,7 +295,7 @@ rwaldrace <- function(N, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)),
 
 #' @rdname rwaldrace
 #' @export
-dwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = 0L, ln = 0L) {
+dwaldrace <- function(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = 0.0, ln = 0L) {
     .Call('seqmodels_dwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1, s0, rl, ln)
 }
 
