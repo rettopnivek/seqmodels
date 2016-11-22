@@ -572,8 +572,8 @@ double diff_wrapper( std::vector<double> par ) {
   }
   // Variability in drift
   if (ver == 2) {
-    out = dw_var( par, -5.0*par[7] + par[4],
-                  5.0*par[7] + par[4], 2 );
+    out = dw_var( par, -10.0*par[7] + par[4],
+                  10.0*par[7] + par[4], 2 );
   }
   // Variability in starting point
   if (ver == 3) {
@@ -767,7 +767,8 @@ Rcpp::NumericVector ddiff( Rcpp::NumericVector rt,
     input(nv,6) = sigma(sigma_inc);
     input(nv,7) = eta(eta_inc);
     // Fix small values of eta to 0.0
-    if ( input(nv,7) < 1e-4 ) { input(nv,7) = 0.0; }
+    if ( (input(nv,7) < 1e-4) &
+         (input(nv,7) >= 0.0) ) { input(nv,7) = 0.0; }
     input(nv,8) = stheta(stheta_inc);
     // Fix small values of stheta to 0.0
     if ( input(nv,8) < 1e-4 ) { input(nv,8) = 0.0; }

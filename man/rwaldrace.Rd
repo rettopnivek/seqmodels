@@ -11,7 +11,7 @@ rwaldrace(N, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
   s0 = as.numeric(c(1)), rl = 0L)
 
 dwaldrace(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)), rl = 0L, ln = 0L)
+  s0 = as.numeric(c(1)), rl = 0, ln = 0L)
 
 pwaldrace(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
   s0 = as.numeric(c(1)), rl = 0, parYes = 1L)

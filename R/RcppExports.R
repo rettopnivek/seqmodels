@@ -65,6 +65,122 @@ qemg <- function(p, mu, sigma, lambda, mnRT = -1.0, mxRT = 4.0, em_stop = 20L, e
     .Call('seqmodels_qemg', PACKAGE = 'seqmodels', p, mu, sigma, lambda, mnRT, mxRT, em_stop, err)
 }
 
+#' The Frechet Distribution
+#'
+#' Random generation, density, distribution, and quantile functions
+#' for the Frechet (inverse Weibull) distribution with a shape and
+#' scale parameter.
+#'
+#' @param N the number of draws for random generation.
+#' @param t a vector of quantiles (typically response times).
+#' @param alpha a vector of shape parameters (alpha > 0).
+#' @param mu a vector of scale parameters (mu > 0).
+#' @param ln indicates whether the log-likelihood should be returned,
+#'   where 1 = True, 0 = False.
+#'
+#' @section Details:
+#' The Frechet distribution is a special case of the generalized extreme
+#' value distribution, the distribution of the maxima of a sequence of
+#' i.i.d. random variables with no lower boundary. The current
+#' parameterization is intended for applications for a variant of the
+#' LBA model (Terry et al., 2015).
+#'
+#' For unequal vector lengths, values are recycled.
+#'
+#' @section References:
+#' Terry, A., Marley, A. A. J., Barnwal, E.-J., Wagenmakers, Heathcote,
+#'   A., & Brown, S. D. (2015). Generalising the drift rate distribution
+#'   for linear ballistic accumulators. Journal of Mathematical
+#'   Psychology, 68, 49 - 58.
+#'
+#' @examples
+#' # Treatment of illegal values and vectorization
+#' set.seed(100)
+#' rfrechet( 8, c(1,2,-1,1), c(1,.5,1,-1) ) # Returns NA
+#' dfrechet( c(.5, -1), c(1,2,-1,1), c(1,.5,1,-1) ) # Returns 0
+#' pfrechet( c(.5, -1), c(1,2,-1,1),c(1,.4,1,-1) ) # Returns 0
+#'
+#' # Distribution function
+#' t = seq(0,2,length=1000)
+#' plot( t, pfrechet(t,3,.5), type = 'l', xlab = 'Time', ylab =
+#'   'Distribution', bty = 'l', yaxt = 'n' )
+#' axis(2,seq(0,1,.5))
+#' # Quantile function
+#' prb = seq( .1, .9, .2 ) # Probabilities
+#' qnt = qfrechet( prb, 3, .5 )
+#' segments( rep(0,length(prb)), prb, qnt, prb )
+#' segments( qnt,rep(0,length(prb)), qnt, prb )
+#'
+#' @export
+rfrechet <- function(N, alpha, mu) {
+    .Call('seqmodels_rfrechet', PACKAGE = 'seqmodels', N, alpha, mu)
+}
+
+#' @rdname rfrechet
+#' @export
+dfrechet <- function(t, alpha, mu, ln = 0L) {
+    .Call('seqmodels_dfrechet', PACKAGE = 'seqmodels', t, alpha, mu, ln)
+}
+
+#' @rdname rfrechet
+#' @export
+pfrechet <- function(t, alpha, mu) {
+    .Call('seqmodels_pfrechet', PACKAGE = 'seqmodels', t, alpha, mu)
+}
+
+#' @rdname rfrechet
+#' @export
+qfrechet <- function(p, alpha, mu) {
+    .Call('seqmodels_qfrechet', PACKAGE = 'seqmodels', p, alpha, mu)
+}
+
+#' A Linear Ballistic Accumulator
+#'
+#' Random generation, density, and distribution functions
+#' for a single linear ballistic accumulator (Brown & Heathcote,
+#' 2008; Terry et al., 2015).
+#'
+#' @param N the number of draws for random generation.
+#' @param t a vector of quantiles (typically response times).
+#' @param A the upper boundary for the uniformly distributed start
+#'   points (A >= 0).
+#' @param b the threshold for the accumulator (b >= A).
+#' @param alpha a location/shape parameter for the distribution
+#'   of drift rates.
+#' @param beta a scale parameter for the distribution of drift
+#'   rates.
+#' @param ln indicates whether the log-likelihood should be returned,
+#'   where 1 = True, 0 = False (the default).
+#' @param ver indicates which variant of drift rate distribution
+#'   for the LBA should be used.
+#'
+#' @note For a standard LBA with normally distributed drifts,
+#' the distribution is truncated so that drift rates will only be
+#' positive.
+#'
+#' @section References:
+#' Brown, S. D., & Heathcote, A. (2008). The simplest complete model of
+#'   choice response time: Linear ballistic accumulation. Cognitive
+#'   psychology, 57(3), 153-178.
+#' Terry, A., Marley, A. A. J., Barnwal, E.-J., Wagenmakers, Heathcote,
+#'   A., & Brown, S. D. (2015). Generalising the drift rate distribution
+#'   for linear ballistic accumulators. Journal of Mathematical
+#'   Psychology, 68, 49 - 58.
+#'
+#' @examples
+#' # Forthcoming
+#'
+#' @export
+rlba_1acc <- function(N, A, b, alpha, beta, ver = 0L) {
+    .Call('seqmodels_rlba_1acc', PACKAGE = 'seqmodels', N, A, b, alpha, beta, ver)
+}
+
+#' @rdname rlba_1acc
+#' @export
+plba_1acc <- function(t, A, b, alpha, beta, ver = 0L) {
+    .Call('seqmodels_plba_1acc', PACKAGE = 'seqmodels', t, A, b, alpha, beta, ver)
+}
+
 #' @useDynLib seqmodels
 #' @importFrom Rcpp sourceCpp
 NULL

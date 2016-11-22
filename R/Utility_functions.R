@@ -162,6 +162,225 @@ dist_calc = function(t,ch,prm,dist,prb,ver) {
     }
   }
 
+  # Diffusion model
+  if ( dist == 'dm' ) {
+
+    stop_f = F
+
+    # Define default values
+    pv = c( a = .8, z = .5, v = 1,
+            t0 = 0, eta = 0, sz = 0,
+            st = 0, s = 1 )
+    # Extract inputted parameters
+    nms = names( prm )
+    if ( length( nms ) == 0 ) {
+      nms = names( pv )[1:length(prm)]
+      names( prm ) = nms
+    }
+    pv[ nms ] = prm[ nms ]
+
+    if ( ver == 'PDF' ) {
+
+      y = ddiff( t, ch,
+                     pv[1], pv[2], pv[3], pv[4],
+                     eta = pv[5], stheta = pv[6],
+                 stau = pv[7], sigma = pv[8] )
+
+    }
+
+  }
+
+  # Frechet distribution
+  if ( dist == 'fr' ) {
+
+    stop_f = F
+
+    # Define default values
+    pv = c( alpha = 3, mu = 3 )
+    # Extract inputted parameters
+    nms = names( prm )
+    if ( length( nms ) == 0 ) {
+      nms = names( pv )[1:length(prm)]
+      names( prm ) = nms
+    }
+    pv[ nms ] = prm[ nms ]
+
+    if ( ver == 'CDF' ) {
+
+      y = pfrechet( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'PDF' ) {
+
+      y = dfrechet( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'QPE' ) {
+
+      t = qfrechet( prb, pv[1], pv[2] )
+      y = prb
+    }
+
+    if ( ver == 'HF' ) {
+
+      d = dfrechet( t, pv[1], pv[2] )
+      D = pfrechet( t, pv[1], pv[2] )
+      y = d/(1-D)
+
+    }
+  }
+
+  # Gamma distribution
+  if ( dist == 'ga' ) {
+
+    stop_f = F
+
+    # Define default values
+    pv = c( shape = 4, rate = 8 )
+    # Extract inputted parameters
+    nms = names( prm )
+    if ( length( nms ) == 0 ) {
+      nms = names( pv )[1:length(prm)]
+      names( prm ) = nms
+    }
+    pv[ nms ] = prm[ nms ]
+
+    if ( ver == 'CDF' ) {
+
+      y = pgamma( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'PDF' ) {
+
+      y = dgamma( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'QPE' ) {
+
+      t = qgamma( prb, pv[1], pv[2] )
+      y = prb
+    }
+
+    if ( ver == 'HF' ) {
+
+      d = dgamma( t, pv[1], pv[2] )
+      D = pgamma( t, pv[1], pv[2] )
+      y = d/(1-D)
+
+    }
+  }
+
+  # Weibull distribution
+  if ( dist == 'wb' ) {
+
+    stop_f = F
+
+    # Define default values
+    pv = c( shape = 2, rate = .5 )
+    # Extract inputted parameters
+    nms = names( prm )
+    if ( length( nms ) == 0 ) {
+      nms = names( pv )[1:length(prm)]
+      names( prm ) = nms
+    }
+    pv[ nms ] = prm[ nms ]
+
+    if ( ver == 'CDF' ) {
+
+      y = pweibull( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'PDF' ) {
+
+      y = dweibull( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'QPE' ) {
+
+      t = qweibull( prb, pv[1], pv[2] )
+      y = prb
+    }
+
+    if ( ver == 'HF' ) {
+
+      d = dweibull( t, pv[1], pv[2] )
+      D = pweibull( t, pv[1], pv[2] )
+      y = d/(1-D)
+
+    }
+  }
+
+  # Log-normal distribution
+  if ( dist == 'ln' ) {
+
+    stop_f = F
+
+    # Define default values
+    pv = c( shape = -.69, rate = .5 )
+    # Extract inputted parameters
+    nms = names( prm )
+    if ( length( nms ) == 0 ) {
+      nms = names( pv )[1:length(prm)]
+      names( prm ) = nms
+    }
+    pv[ nms ] = prm[ nms ]
+
+    if ( ver == 'CDF' ) {
+
+      y = plnorm( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'PDF' ) {
+
+      y = dlnorm( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'QPE' ) {
+
+      t = qlnorm( prb, pv[1], pv[2] )
+      y = prb
+    }
+
+    if ( ver == 'HF' ) {
+
+      d = dlnorm( t, pv[1], pv[2] )
+      D = plnorm( t, pv[1], pv[2] )
+      y = d/(1-D)
+
+    }
+  }
+
+  # Single LBA
+  if ( dist == '1lba' ) {
+
+    stop_f = F
+
+    # Define default values
+    pv = c( A = 1, b = 1.5, alpha = 2, beta = 1, ver = 0 )
+    # Extract inputted parameters
+    nms = names( prm )
+    if ( length( nms ) == 0 ) {
+      nms = names( pv )[1:length(prm)]
+      names( prm ) = nms
+    }
+    pv[ nms ] = prm[ nms ]
+
+    if ( ver == 'CDF' ) {
+
+      y = plba_1acc( t, pv[1], pv[2], pv[3], pv[4], pv[5] )
+
+    }
+
+  }
+
   if (stop_f) out = list() else out = list( t = t, y = y )
   return( out )
 }
