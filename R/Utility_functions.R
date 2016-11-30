@@ -381,6 +381,93 @@ dist_calc = function(t,ch,prm,dist,prb,ver) {
 
   }
 
+  # Beta distribution
+  if ( dist == 'b' ) {
+
+    stop_f = F
+
+    # Define default values
+    pv = c( alpha = 7.5, beta = 10 )
+    # Extract inputted parameters
+    nms = names( prm )
+    if ( length( nms ) == 0 ) {
+      nms = names( pv )[1:length(prm)]
+      names( prm ) = nms
+    }
+    pv[ nms ] = prm[ nms ]
+
+    # Properly bound
+    if ( max(t) > 1.0 ) t = seq(0,1,length=1000)
+
+    if ( ver == 'CDF' ) {
+
+      y = pbeta( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'PDF' ) {
+
+      y = dbeta( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'QPE' ) {
+
+      t = qbeta( prb, pv[1], pv[2] )
+      y = prb
+    }
+
+    if ( ver == 'HF' ) {
+
+      d = dbeta( t, pv[1], pv[2] )
+      D = pbeta( t, pv[1], pv[2] )
+      y = d/(1-D)
+
+    }
+  }
+
+  # Normal distribution
+  if ( dist == 'n' ) {
+
+    stop_f = F
+
+    # Define default values
+    pv = c( mu = 0.0, sigma = 1.0 )
+    # Extract inputted parameters
+    nms = names( prm )
+    if ( length( nms ) == 0 ) {
+      nms = names( pv )[1:length(prm)]
+      names( prm ) = nms
+    }
+    pv[ nms ] = prm[ nms ]
+
+    if ( ver == 'CDF' ) {
+
+      y = pnorm( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'PDF' ) {
+
+      y = dnorm( t, pv[1], pv[2] )
+
+    }
+
+    if ( ver == 'QPE' ) {
+
+      t = qnorm( prb, pv[1], pv[2] )
+      y = prb
+    }
+
+    if ( ver == 'HF' ) {
+
+      d = dnorm( t, pv[1], pv[2] )
+      D = pnorm( t, pv[1], pv[2] )
+      y = d/(1-D)
+
+    }
+  }
+
   if (stop_f) out = list() else out = list( t = t, y = y )
   return( out )
 }

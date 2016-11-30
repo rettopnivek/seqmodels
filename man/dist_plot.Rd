@@ -22,6 +22,14 @@ plot. Can be
   \item{\code{ig}}{The inverse gaussian distribution.}
   \item{\code{emg}}{The exponentially modified gaussian
     distribution.}
+  \item{\code{dm}}{The diffusion model.}
+  \item{\code{fr}}{The Frechet distribution.}
+  \item{\code{ga}}{The gamma distribution.}
+  \item{\code{wb}}{The weibull distribution.}
+  \item{\code{ln}}{The log-normal distribution.}
+  \item{\code{1lba}}{A single linear ballistic accumulator.}
+  \item{\code{b}}{The beta distribution.}
+  \item{\code{n}}{The normal distribution.}
 }}
 
 \item{ver}{the type of function for the distribution. Can be
