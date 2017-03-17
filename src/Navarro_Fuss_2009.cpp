@@ -85,7 +85,7 @@ Update .rd page (add examples)
 //' @importFrom Rcpp sourceCpp
 
 // Lookup - 01
-// Adaptively calcuates the PDF for the Wiener process
+// Adaptively calculates the PDF for the Wiener process
 // based on whether the small or large time versions is
 // most appropriate
 

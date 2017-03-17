@@ -23,6 +23,10 @@ Terry, A., Marley, A. A. J., Barnwal, E.-J., Wagenmakers, Heathcote,
   A., & Brown, S. D. (2015). Generalising the drift rate distribution
   for linear ballistic accumulators. Journal of Mathematical
   Psychology, 68, 49 - 58.
+rtdist packages (Forthcoming)
+Singmann, H., Brown, S., Gretton, M., Heathcote, A., Voss, A., Voss, J.,
+  & Terry, A. (2016). rtdists: Response Time Distributions. R package
+version 0.6-6.
 
 Index
 Lookup - 01:  rfrechet_scl
@@ -36,13 +40,16 @@ Lookup - 08:  qfrechet
 Lookup - 09:  rlba_1acc_scl
 Lookup - 10:  rlba_1acc
 Lookup - 11:  Z_g
-Lookup - 12:  cligamma
+Lookup - 12:  igamma
 Lookup - 13:  Z_fr
 Lookup - 14:  Z_ln
 Lookup - 15:  plba_1acc_scl
 Lookup - 16:  plba_1acc
-Lookup - 17:
-Lookup - 18:
+Lookup - 17:  dZ_g
+Lookup - 18:  dZ_fr
+Lookup - 19:  dZ_ln
+Lookup - 20:  dlba_1acc_scl
+Lookup - 21:  dlba_1acc
 
 ### TO DO ###
 - Add density functions
@@ -541,34 +548,34 @@ double Z_g( double t, double A, double b, double alpha, double beta ) {
 }
 
 // Lookup - 12
-// The complementary lower incomplete gamma function
+// The incomplete gamma function
 
-double cligammafn( double a, double x ) {
+double igamma( double x, double a ) {
 
-  double out = (1.0-R::pgamma( x, a, 1.0, 1, 0 ) ) * R::gammafn( a );
+  double out = R::pgamma( a, x, 1.0, 0, 0 ) * R::gammafn( x );
 
   return( out );
 }
 
 // Lookup - 13
 // The truncated mean for the Frechet distribution
+// Adapted from code from the 'rtdist' R package
 
 double Z_fr( double t, double A, double b, double alpha, double beta ) {
 
-  // Truncation interval
-  double At = b/t;
-  double Bt = (b-A)/t;
-  double mu = 1.0/beta;
+  double mn = b/t;
+  double mx = ( b - A )/t;
 
-  // Normalizing weight
-  double D = pfrechet_scl( At, alpha, beta ) -
-    pfrechet_scl( Bt, alpha, beta );
+  double G_mn = pfrechet_scl( mn, alpha, beta );
+  double G_mx = pfrechet_scl( mx, alpha, beta );
+  double D = G_mx - G_mn;
 
-  double p1 = (1.0/D) * (1.0/mu);
-  double p2 = cligammafn( 1.0 - 1.0/alpha, pow( mu*At, -alpha ) );
-  double p3 = cligammafn( 1.0 - 1.0/alpha, pow( mu*Bt, -alpha ) );
+  double gam = igamma( 1.0 - ( 1.0/alpha),
+                       pow( 1.0/beta * mx, -alpha ) ) -
+    igamma( 1.0 - ( 1.0/alpha ),
+            pow( 1.0/beta * mn, -alpha ) );
 
-  double out = p1*( p2 - p3 );
+  double out = gam/( 1.0/beta * D );
 
   return( out );
 }
@@ -592,6 +599,9 @@ double Z_ln( double t, double A, double b, double alpha, double beta ) {
 
   return( out );
 }
+
+// Lookup - 15
+// Scalar function for the CDF of the LBA accumulator
 
 double plba_1acc_scl( double t, double A, double b, double alpha,
                       double beta, int ver ) {
@@ -687,7 +697,7 @@ double plba_1acc_scl( double t, double A, double b, double alpha,
   return( out );
 }
 
-// Lookup - 12
+// Lookup - 16
 //' @rdname rlba_1acc
 //' @export
 // [[Rcpp::export]]
@@ -749,6 +759,302 @@ Rcpp::NumericVector plba_1acc( Rcpp::NumericVector t,
   for (int n = 0; n < N; n++) {
     out(n) = plba_1acc_scl( t_v(n), A_v(n), b_v(n), alpha_v(n),
         beta_v(n), ver );
+  }
+
+  return( out );
+}
+
+// Lookup - 17
+// The derivative of the truncated mean for the gamma distribution
+
+double dZ_g( double t, double A, double b, double alpha, double beta ) {
+
+  double k = R::gammafn( alpha + 1.0 )/( beta * R::gammafn( alpha ) );
+  double f = R::pgamma( b/t, alpha + 1.0, 1.0/beta, 1, 0 ) -
+    R::pgamma( (b-A)/t, alpha + 1.0, 1.0/beta, 1, 0 );
+  double fd = -1.0 * R::dgamma( b/t, alpha + 1.0, 1.0/beta, 0 ) *
+    b * pow(t,-2.0) + R::dgamma( (b-A)/t, alpha + 1.0, 1.0/beta, 0 ) *
+    ( b - A ) * pow(t,-2.0);
+  double h = R::pgamma( b/t, alpha, 1.0/beta, 1, 0 ) -
+    R::pgamma( (b-A)/t, alpha, 1.0/beta, 1, 0 );
+  double hd = -1.0 * R::dgamma( b/t, alpha, 1.0/beta, 0 ) *
+    b * pow(t,-2.0) + R::dgamma( (b-A)/t, alpha, 1.0/beta, 0 ) *
+    ( b - A ) * pow(t,-2.0);
+
+  double out = k*( ( fd * h - f * hd )/pow( h, 2.0 ) );
+
+  return( out );
+}
+
+// Lookup - 18
+// The derivative of the truncated mean for the frechet distribution
+// Adapted from code from the 'rtdist' package
+
+double dZ_fr( double t, double A, double b, double alpha, double beta ) {
+
+  double mn = b/t;
+  double mx = ( b - A )/t;
+
+  double G_mn = pfrechet_scl( mn, alpha, beta );
+  double G_mx = pfrechet_scl( mx, alpha, beta );
+  double D = G_mx - G_mn;
+
+  double g_mn = dfrechet_scl( mn, alpha, beta, 0 );
+  double g_mx = dfrechet_scl( mx, alpha, beta, 0 );
+  double diffG1 = -b/pow( t, 2.0 ) * g_mn;
+  double diffG2 = -(b-A)/pow( t, 2.0 ) * g_mx;
+  double diffD = diffG1 - diffG2;
+
+  double gam = igamma( 1.0 - ( 1.0/alpha),
+                       pow( 1.0/beta * mx, -alpha ) ) -
+    igamma( 1.0 - ( 1.0/alpha ),
+            pow( 1.0/beta * mn, -alpha ) );
+
+  double subterm = pow( t, -alpha + 2.0 );
+  double term1_1 = pow( 1.0/beta * b, -alpha + 1.0 )/subterm;
+  double term1_2 = exp( -pow( 1.0/beta * mn, -alpha ) );
+  double term1 = -alpha * term1_1 * term1_2;
+
+  double term2_1 = pow( 1.0/beta * ( b - A ), -alpha + 1.0 )/subterm;
+  double term2_2 = exp( -pow( 1.0/beta * mx, -alpha ) );
+  double term2 = -alpha * term2_1 * term2_2;
+
+  double diffgam = term1 - term2;
+
+  double out = -pow( 1.0/beta, -1.0 ) * (
+    -pow( D, -2.0 ) * diffD  * gam +
+      ( diffgam * pow( D, -1.0 ) )
+  );
+
+  return( out );
+}
+
+// Lookup - 19
+// The derivative for the truncated mean of a log-normal distribution
+
+double dZ_ln( double t, double A, double b, double alpha, double beta ) {
+
+  // Variable declaration
+  double subterm1;
+  double subterm2;
+
+  double mn = log( (b-A)/t );
+  double mx = log( b/t );
+
+  subterm1 = R::pnorm( ( mx - alpha - pow( beta, 2.0) )/beta,
+                       0.0, 1.0, 1, 0 );
+  subterm2 = R::pnorm( ( mn - alpha - pow( beta, 2.0 ) )/beta,
+                    0.0, 1.0, 1, 0 );
+  double u = subterm1 - subterm2;
+
+  subterm1 = R::pnorm( ( mx - alpha )/beta,
+                       0.0, 1.0, 1, 0 );
+  subterm2 = R::pnorm( ( mn - alpha )/beta,
+                       0.0, 1.0, 1, 0 );
+  double v = subterm1 - subterm2;
+
+  double k = -1.0/( beta*t );
+  subterm1 = k * R::dnorm( ( mx - alpha - pow( beta, 2.0 ) )/beta,
+                           0.0, 1.0, 0 );
+  subterm2 = k * R::dnorm( ( mn - alpha - pow( beta, 2.0 ) )/beta,
+                        0.0, 1.0, 0 );
+  double udash = subterm1 - subterm2;
+
+  subterm1 = k * R::dnorm( ( mx - alpha )/beta,
+                           0.0, 1.0, 0 );
+  subterm2 = k * R::dnorm( ( mn - alpha )/beta,
+                           0.0, 1.0, 0 );
+  double vdash = subterm1 - subterm2;
+
+  double cnst = exp( alpha + pow( beta, 2.0 )/2.0 );
+
+  double out = ( ( udash*v - vdash*u)/pow( v, 2.0 ) )*cnst;
+
+  return( out );
+}
+
+// Lookup - 20
+// Scalar function for the PDF of the LBA accumulator
+
+double dlba_1acc_scl( double t, double A, double b, double alpha,
+                      double beta, int ver, int ln ) {
+
+  // Initialize output
+  double out = 0.0;
+
+  // Check for valid parameter values
+  if ( ( t > 0.0 ) & ( A >= 0.0 ) & ( b >= A ) ) {
+
+    // Standard LBA
+    if ( ( ver == 0 ) & ( beta > 0.0 ) ) {
+
+      if ( A < 1e-10 ) {
+
+        // For small threshold values
+        double phi2 = R::dnorm( b/t, alpha, beta, 0 );
+        out = ( b/pow(t,2.0) )*phi2;
+
+      } else {
+
+        // Variable declaration
+        double ts = t*beta;
+        double tv = t*alpha;
+        double p1 = b - tv;
+        double p2 = p1/ts;
+        double p3 = (p1-A)/ts;
+
+        double Phi2 = R::pnorm(p2,0.0,1.0,1,0);
+        double Phi3 = R::pnorm(p3,0.0,1.0,1,0);
+        double phi2 = R::dnorm(p2,0.0,1.0,0);
+        double phi3 = R::dnorm(p3,0.0,1.0,0);
+
+        // Calculate the likelihood
+        out = ( alpha*(Phi2-Phi3) + beta*( phi3-phi2) )/A;
+
+        // Rescale to distribution function conditional on
+        // positive drift rates
+        out = out/( 1.0 - R::pnorm( 0.0, alpha, beta, 1, 0 ) );
+
+      }
+    }
+
+    // LBA with gamma-distributed drift rates
+    if ( ( ver == 1 ) & ( alpha > 0.0) & ( beta > 0.0 ) ) {
+
+      // Determine truncated mean
+      double Z_t = Z_g( t, A, b, alpha, beta );
+      double Z_td = dZ_g( t, A, b, alpha, beta );
+
+      double g_bt = R::dgamma( b/t, alpha, 1.0/beta, 0 );
+      double g_bAt = R::dgamma( (b-A)/t, alpha, 1.0/beta, 0 );
+      double G_bt = R::pgamma( b/t, alpha, 1.0/beta, 1, 0 );
+      double G_bAt = R::pgamma( (b-A)/t, alpha, 1.0/beta, 1, 0 );
+
+      double p1 = -( g_bt * b )/pow( t, 2.0 ) * ( t * Z_t - b )/A;
+      double p2 = G_bt * ( Z_t + t * Z_td )/A;
+      double p3 = -g_bAt * ( b - A ) * pow( t, -2.0 ) *
+        ( b - A - t * Z_t ) / A;
+      double p4 = G_bAt * ( -Z_t - t * Z_td )/A;
+
+      out = p1 + p2 + p3 + p4;
+    }
+
+    // LBA with frechet-distributed drift rates
+    if ( ( ver == 2 ) & ( alpha > 0.0) & ( beta > 0.0 ) ) {
+
+      // Determine truncated mean
+      double  Z_t = Z_fr( t, A, b, alpha, beta );
+      double Z_td = dZ_fr( t, A, b, alpha, beta );
+
+      double g_bt = dfrechet_scl( b/t, alpha, beta, 0 );
+      double g_bAt = dfrechet_scl( (b-A)/t, alpha, beta, 0 );
+      double G_bt = pfrechet_scl( b/t, alpha, beta );
+      double G_bAt = pfrechet_scl( (b-A)/t, alpha, beta );
+
+      double p1 = -( g_bt * b )/pow( t, 2.0 ) * ( t * Z_t - b )/A;
+      double p2 = G_bt * ( Z_t + t * Z_td )/A;
+      double p3 = -g_bAt * ( b - A ) * pow( t, -2.0 ) *
+        ( b - A - t * Z_t ) / A;
+      double p4 = G_bAt * ( -Z_t - t * Z_td )/A;
+
+      out = p1 + p2 + p3 + p4;
+    }
+
+    // LBA with lognormal-distributed drift rates
+    if ( ( ver == 3 ) & ( beta > 0.0 ) ) {
+
+      // Determine truncated mean
+      double  Z_t = Z_ln( t, A, b, alpha, beta );
+      double Z_td = dZ_ln( t, A, b, alpha, beta );
+
+      double g_bt = R::dlnorm( b/t, alpha, beta, 0 );
+      double g_bAt = R::dlnorm( (b-A)/t, alpha, beta, 0 );
+      double G_bt = R::plnorm( b/t, alpha, beta, 1, 0 );
+      double G_bAt = R::plnorm( (b-A)/t, alpha, beta, 1, 0 );
+
+      double p1 = -( g_bt * b )/pow( t, 2.0 ) * ( t * Z_t - b )/A;
+      double p2 = G_bt * ( Z_t + t * Z_td )/A;
+      double p3 = -g_bAt * ( b - A ) * pow( t, -2.0 ) *
+        ( b - A - t * Z_t ) / A;
+      double p4 = G_bAt * ( -Z_t - t * Z_td )/A;
+
+      out = p1 + p2 + p3 + p4;
+    }
+
+  }
+
+  // Check for incorrect values
+  if ( out < 0.0 ) out = 0.0;
+
+  // If log-density is desired
+  if ( ln == 1 ) out = log( out );
+
+  return( out );
+}
+
+// Lookup - 21
+//' @rdname rlba_1acc
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector dlba_1acc( Rcpp::NumericVector t,
+                               Rcpp::NumericVector A,
+                               Rcpp::NumericVector b,
+                               Rcpp::NumericVector alpha,
+                               Rcpp::NumericVector beta,
+                               int ver = 0,
+                               int ln = 0 ) {
+
+  int N_t = t.size(); // Number of observations
+  int N_A = A.size(); // Number of parameters
+  int N_b = b.size();
+  int N_alpha = alpha.size();
+  int N_beta = beta.size();
+
+  // Increment variables for loop
+  int t_inc = 0;
+  int A_inc = 0;
+  int b_inc = 0;
+  int alpha_inc = 0;
+  int beta_inc = 0;
+
+  // Determine the longest input vector
+  int N = max( Rcpp::NumericVector::create( N_t, N_A, N_b,
+                                            N_alpha, N_beta ) );
+
+  // Set output vector
+  Rcpp::NumericVector out(N);
+
+  // Create vectors for the parameters
+  Rcpp::NumericVector t_v(N);
+  Rcpp::NumericVector A_v(N);
+  Rcpp::NumericVector b_v(N);
+  Rcpp::NumericVector alpha_v(N);
+  Rcpp::NumericVector beta_v(N);
+
+  // Loop through observations
+  for (int nv = 0; nv < N; nv++) {
+    t_v(nv) = t(t_inc);
+    A_v(nv) = A(A_inc);
+    b_v(nv) = b(b_inc);
+    alpha_v(nv) = alpha(alpha_inc);
+    beta_v(nv) = beta(beta_inc);
+
+    t_inc = t_inc + 1;
+    A_inc = A_inc + 1;
+    b_inc = b_inc + 1;
+    alpha_inc = alpha_inc + 1;
+    beta_inc = beta_inc + 1;
+    if (N_t==t_inc) t_inc = 0;
+    if (N_A==A_inc) A_inc = 0;
+    if (N_b==b_inc) b_inc = 0;
+    if (N_alpha==alpha_inc) alpha_inc = 0;
+    if (N_beta==beta_inc) beta_inc = 0;
+  }
+
+  // Calculate distribution function
+  for (int n = 0; n < N; n++) {
+    out(n) = dlba_1acc_scl( t_v(n), A_v(n), b_v(n), alpha_v(n),
+        beta_v(n), ver, ln );
   }
 
   return( out );

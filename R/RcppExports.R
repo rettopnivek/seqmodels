@@ -181,6 +181,12 @@ plba_1acc <- function(t, A, b, alpha, beta, ver = 0L) {
     .Call('seqmodels_plba_1acc', PACKAGE = 'seqmodels', t, A, b, alpha, beta, ver)
 }
 
+#' @rdname rlba_1acc
+#' @export
+dlba_1acc <- function(t, A, b, alpha, beta, ver = 0L, ln = 0L) {
+    .Call('seqmodels_dlba_1acc', PACKAGE = 'seqmodels', t, A, b, alpha, beta, ver, ln)
+}
+
 #' @useDynLib seqmodels
 #' @importFrom Rcpp sourceCpp
 NULL

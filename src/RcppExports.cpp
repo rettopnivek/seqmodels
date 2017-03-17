@@ -197,6 +197,23 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// dlba_1acc
+Rcpp::NumericVector dlba_1acc(Rcpp::NumericVector t, Rcpp::NumericVector A, Rcpp::NumericVector b, Rcpp::NumericVector alpha, Rcpp::NumericVector beta, int ver, int ln);
+RcppExport SEXP seqmodels_dlba_1acc(SEXP tSEXP, SEXP ASEXP, SEXP bSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP verSEXP, SEXP lnSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type A(ASEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b(bSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< int >::type ver(verSEXP);
+    Rcpp::traits::input_parameter< int >::type ln(lnSEXP);
+    __result = Rcpp::wrap(dlba_1acc(t, A, b, alpha, beta, ver, ln));
+    return __result;
+END_RCPP
+}
 // ddiff
 Rcpp::NumericVector ddiff(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector alpha, Rcpp::NumericVector theta, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector eta, Rcpp::NumericVector stheta, Rcpp::NumericVector stau, Rcpp::NumericVector sigma, double eps, int ln, int parYes);
 RcppExport SEXP seqmodels_ddiff(SEXP rtSEXP, SEXP chSEXP, SEXP alphaSEXP, SEXP thetaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP etaSEXP, SEXP sthetaSEXP, SEXP stauSEXP, SEXP sigmaSEXP, SEXP epsSEXP, SEXP lnSEXP, SEXP parYesSEXP) {
