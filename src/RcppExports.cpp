@@ -214,6 +214,98 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// qlba_1acc
+Rcpp::NumericVector qlba_1acc(Rcpp::NumericVector p, Rcpp::NumericVector A, Rcpp::NumericVector b, Rcpp::NumericVector alpha, Rcpp::NumericVector beta, int ver, double mxT, int em_stop, double err);
+RcppExport SEXP seqmodels_qlba_1acc(SEXP pSEXP, SEXP ASEXP, SEXP bSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP verSEXP, SEXP mxTSEXP, SEXP em_stopSEXP, SEXP errSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type A(ASEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b(bSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< int >::type ver(verSEXP);
+    Rcpp::traits::input_parameter< double >::type mxT(mxTSEXP);
+    Rcpp::traits::input_parameter< int >::type em_stop(em_stopSEXP);
+    Rcpp::traits::input_parameter< double >::type err(errSEXP);
+    __result = Rcpp::wrap(qlba_1acc(p, A, b, alpha, beta, ver, mxT, em_stop, err));
+    return __result;
+END_RCPP
+}
+// rlba
+Rcpp::NumericMatrix rlba(int N, Rcpp::NumericVector A1, Rcpp::NumericVector b1, Rcpp::NumericVector alpha1, Rcpp::NumericVector beta1, Rcpp::NumericVector tau1, Rcpp::NumericVector A0, Rcpp::NumericVector b0, Rcpp::NumericVector alpha0, Rcpp::NumericVector beta0, Rcpp::NumericVector tau0, int rl, int ver);
+RcppExport SEXP seqmodels_rlba(SEXP NSEXP, SEXP A1SEXP, SEXP b1SEXP, SEXP alpha1SEXP, SEXP beta1SEXP, SEXP tau1SEXP, SEXP A0SEXP, SEXP b0SEXP, SEXP alpha0SEXP, SEXP beta0SEXP, SEXP tau0SEXP, SEXP rlSEXP, SEXP verSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type A1(A1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau1(tau1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type A0(A0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b0(b0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha0(alpha0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type beta0(beta0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau0(tau0SEXP);
+    Rcpp::traits::input_parameter< int >::type rl(rlSEXP);
+    Rcpp::traits::input_parameter< int >::type ver(verSEXP);
+    __result = Rcpp::wrap(rlba(N, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ver));
+    return __result;
+END_RCPP
+}
+// dlba
+Rcpp::NumericVector dlba(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector A1, Rcpp::NumericVector b1, Rcpp::NumericVector alpha1, Rcpp::NumericVector beta1, Rcpp::NumericVector tau1, Rcpp::NumericVector A0, Rcpp::NumericVector b0, Rcpp::NumericVector alpha0, Rcpp::NumericVector beta0, Rcpp::NumericVector tau0, double rl, int ln, int ver);
+RcppExport SEXP seqmodels_dlba(SEXP rtSEXP, SEXP chSEXP, SEXP A1SEXP, SEXP b1SEXP, SEXP alpha1SEXP, SEXP beta1SEXP, SEXP tau1SEXP, SEXP A0SEXP, SEXP b0SEXP, SEXP alpha0SEXP, SEXP beta0SEXP, SEXP tau0SEXP, SEXP rlSEXP, SEXP lnSEXP, SEXP verSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type rt(rtSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type ch(chSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type A1(A1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau1(tau1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type A0(A0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b0(b0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha0(alpha0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type beta0(beta0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau0(tau0SEXP);
+    Rcpp::traits::input_parameter< double >::type rl(rlSEXP);
+    Rcpp::traits::input_parameter< int >::type ln(lnSEXP);
+    Rcpp::traits::input_parameter< int >::type ver(verSEXP);
+    __result = Rcpp::wrap(dlba(rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ln, ver));
+    return __result;
+END_RCPP
+}
+// plba
+Rcpp::NumericVector plba(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector A1, Rcpp::NumericVector b1, Rcpp::NumericVector alpha1, Rcpp::NumericVector beta1, Rcpp::NumericVector tau1, Rcpp::NumericVector A0, Rcpp::NumericVector b0, Rcpp::NumericVector alpha0, Rcpp::NumericVector beta0, Rcpp::NumericVector tau0, double rl, double ver, int parYes);
+RcppExport SEXP seqmodels_plba(SEXP rtSEXP, SEXP chSEXP, SEXP A1SEXP, SEXP b1SEXP, SEXP alpha1SEXP, SEXP beta1SEXP, SEXP tau1SEXP, SEXP A0SEXP, SEXP b0SEXP, SEXP alpha0SEXP, SEXP beta0SEXP, SEXP tau0SEXP, SEXP rlSEXP, SEXP verSEXP, SEXP parYesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type rt(rtSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type ch(chSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type A1(A1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau1(tau1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type A0(A0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b0(b0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alpha0(alpha0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type beta0(beta0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau0(tau0SEXP);
+    Rcpp::traits::input_parameter< double >::type rl(rlSEXP);
+    Rcpp::traits::input_parameter< double >::type ver(verSEXP);
+    Rcpp::traits::input_parameter< int >::type parYes(parYesSEXP);
+    __result = Rcpp::wrap(plba(rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ver, parYes));
+    return __result;
+END_RCPP
+}
 // ddiff
 Rcpp::NumericVector ddiff(Rcpp::NumericVector rt, Rcpp::NumericVector ch, Rcpp::NumericVector alpha, Rcpp::NumericVector theta, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector eta, Rcpp::NumericVector stheta, Rcpp::NumericVector stau, Rcpp::NumericVector sigma, double eps, int ln, int parYes);
 RcppExport SEXP seqmodels_ddiff(SEXP rtSEXP, SEXP chSEXP, SEXP alphaSEXP, SEXP thetaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP etaSEXP, SEXP sthetaSEXP, SEXP stauSEXP, SEXP sigmaSEXP, SEXP epsSEXP, SEXP lnSEXP, SEXP parYesSEXP) {

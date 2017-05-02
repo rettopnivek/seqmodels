@@ -25,7 +25,6 @@ Lookup - 08:  qemg
 ### TO DO ###
 Add references for the exponentially modified gaussian
 Add examples
-Add quantile function
 */
 
 // Lookup - 01

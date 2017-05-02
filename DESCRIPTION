@@ -6,7 +6,7 @@ Description: Distribution, density, quantile, and random number generation funct
 Depends:
     R (>= 3.0),
     RcppParallel
-License: What license is it under?
+License: MIT + License
 LazyData: true
 LinkingTo: Rcpp, RcppParallel
 Imports:

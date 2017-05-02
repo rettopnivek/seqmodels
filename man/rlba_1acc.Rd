@@ -3,6 +3,7 @@
 \name{rlba_1acc}
 \alias{dlba_1acc}
 \alias{plba_1acc}
+\alias{qlba_1acc}
 \alias{rlba_1acc}
 \title{A Linear Ballistic Accumulator}
 \usage{
@@ -11,6 +12,9 @@ rlba_1acc(N, A, b, alpha, beta, ver = 0L)
 plba_1acc(t, A, b, alpha, beta, ver = 0L)
 
 dlba_1acc(t, A, b, alpha, beta, ver = 0L, ln = 0L)
+
+qlba_1acc(p, A, b, alpha, beta, ver = 0L, mxT = 10, em_stop = 20L,
+  err = 1e-04)
 }
 \arguments{
 \item{N}{the number of draws for random generation.}
@@ -53,6 +57,9 @@ Terry, A., Marley, A. A. J., Barnwal, E.-J., Wagenmakers, Heathcote,
   A., & Brown, S. D. (2015). Generalising the drift rate distribution
   for linear ballistic accumulators. Journal of Mathematical
   Psychology, 68, 49 - 58.
+Singman, H., Brown, S., Gretton, M., Heathcote, A., Voss, A.,
+  Voss, J., & Terry, A. (2016). rtdists: Response Time
+  Distributions.  R package version 0.6-6.
 }
 \examples{
 # Forthcoming

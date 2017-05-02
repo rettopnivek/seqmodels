@@ -824,7 +824,7 @@ Rcpp::NumericVector dwaldrace (Rcpp::NumericVector rt,
     if (N_tau0==tau0_inc) tau0_inc = 0;
   }
 
-  // Calculate likelihood in parallel
+  // Calculate likelihood
   for (int n = 0; n < N; n++) {
     out(n) = dwaldrace_scl(rt_v(n), ch_v(n), k1_v(n), xi1_v(n),
         s1_v(n), tau1_v(n), k0_v(n), xi0_v(n),
@@ -1284,19 +1284,3 @@ Rcpp::NumericVector qwaldrace ( Rcpp::NumericVector p,
 
   return ( output );
 }
-
-/*
- t = seq(0,2,.001)
-prm = c( 1, 1, 4, 1, .2, 1, 1, 1, .2 )
-cdf = pwaldrace( t, prm[1], prm[2], prm[3], prm[5], prm[6], prm[7], prm[9] )
-x11(); plot( t, cdf, xlab = 'RT (s)', ylab = 'P( T < t )', bty = 'l',
-    type = 'l')
-prm2 = c( .1, prm, 4.0, 20, .001, 0 )
-q = qwaldrace_scl( prm2 )
-abline( v = q, col = 'red' )
-abline( h = .5, lty = 2 )
-abline( v = t[ max( which( cdf < .5 ) ) ], lty = 2 )
-qnt = qwaldrace( prb, prm[1], prm[2], prm[3], prm[5], prm[6], prm[7],
-                 prm[9], joint = 0 )
-abline( v = qnt, col = 'blue' )
-*/

@@ -166,6 +166,9 @@ qfrechet <- function(p, alpha, mu) {
 #'   A., & Brown, S. D. (2015). Generalising the drift rate distribution
 #'   for linear ballistic accumulators. Journal of Mathematical
 #'   Psychology, 68, 49 - 58.
+#' Singman, H., Brown, S., Gretton, M., Heathcote, A., Voss, A.,
+#'   Voss, J., & Terry, A. (2016). rtdists: Response Time
+#'   Distributions.  R package version 0.6-6.
 #'
 #' @examples
 #' # Forthcoming
@@ -185,6 +188,85 @@ plba_1acc <- function(t, A, b, alpha, beta, ver = 0L) {
 #' @export
 dlba_1acc <- function(t, A, b, alpha, beta, ver = 0L, ln = 0L) {
     .Call('seqmodels_dlba_1acc', PACKAGE = 'seqmodels', t, A, b, alpha, beta, ver, ln)
+}
+
+#' @rdname rlba_1acc
+#' @export
+qlba_1acc <- function(p, A, b, alpha, beta, ver = 0L, mxT = 10.0, em_stop = 20L, err = .0001) {
+    .Call('seqmodels_qlba_1acc', PACKAGE = 'seqmodels', p, A, b, alpha, beta, ver, mxT, em_stop, err)
+}
+
+#' The LBA Model
+#'
+#' Random generation, density, distribution, and quantile functions
+#' for a two accumulator version of the LBA model (Brown & Heathcote,
+#' 2008; Terry et al., 2015).
+#'
+#' @param N the number of observations to simulate.
+#' @param rt a vector of response times (rt > 0).
+#' @param ch a vector of choices (ch = {0,1}).
+#' @param A1 the upper boundary for the uniformly distributed start
+#'   points (A1 >= 0) for choices == 1.
+#' @param b1 the threshold (b1 >= A1) for choices == 1.
+#' @param alpha1 a location/shape parameter for the distribution
+#'   of drift rates for choices == 1.
+#' @param beta1 a scale parameter for the distribution of drift
+#'   rates for choices == 1.
+#' @param A0 the upper boundary for the uniformly distributed start
+#'   points (A0 >= 0) for choices == 0.
+#' @param b0 the threshold (b0 >= A0) for choices == 0.
+#' @param alpha0 a location/shape parameter for the distribution
+#'   of drift rates for choices == 0.
+#' @param beta0 a scale parameter for the distribution of drift
+#'   rates for choices == 0.
+#' @param ln indicates whether the log-likelihood should be returned,
+#'   where 1 = True, 0 = False (the default).
+#' @param ver indicates which variant of drift rate distribution
+#'   for the LBA should be used.
+#' @param rl if 1, the residual latency impacts the decision rule.
+#' @param mxRT the maximum RT response time value that the algorithm is applied to.
+#' @param em_step the maximum number of iterations for the linear interpolation.
+#' @param err the desired degree of precision for the linear interpolation.
+#' @param joint If 1, indicates that the probabilities are based on the joint
+#'   distribution function.
+#' @param parYes if set to 1, the code is run in parallel.
+#'
+#' @section Notes:
+#' For unequal vector lengths, values are recycled. For random draws,
+#' inadmissible values return NA. For a standard LBA with normally
+#' distributed drifts, the distribution is truncated so that drift
+#' rates will only be positive.
+#'
+#' @section References:
+#' Brown, S. D., & Heathcote, A. (2008). The simplest complete model of
+#'   choice response time: Linear ballistic accumulation. Cognitive
+#'   psychology, 57(3), 153-178.
+#' Terry, A., Marley, A. A. J., Barnwal, E.-J., Wagenmakers, Heathcote,
+#'   A., & Brown, S. D. (2015). Generalising the drift rate distribution
+#'   for linear ballistic accumulators. Journal of Mathematical
+#'   Psychology, 68, 49 - 58.
+#' Singman, H., Brown, S., Gretton, M., Heathcote, A., Voss, A.,
+#'   Voss, J., & Terry, A. (2016). rtdists: Response Time
+#'   Distributions.  R package version 0.6-6.
+#'
+#' @examples
+#' Forthcoming
+#'
+#' @export
+rlba <- function(N, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl = 0L, ver = 0L) {
+    .Call('seqmodels_rlba', PACKAGE = 'seqmodels', N, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ver)
+}
+
+#' @rdname rlba
+#' @export
+dlba <- function(rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl = 0.0, ln = 0L, ver = 0L) {
+    .Call('seqmodels_dlba', PACKAGE = 'seqmodels', rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ln, ver)
+}
+
+#' @rdname rlba
+#' @export
+plba <- function(rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl = 0.0, ver = 0.0, parYes = 1L) {
+    .Call('seqmodels_plba', PACKAGE = 'seqmodels', rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ver, parYes)
 }
 
 #' @useDynLib seqmodels
