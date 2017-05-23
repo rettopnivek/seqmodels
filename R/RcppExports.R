@@ -163,10 +163,11 @@ memg <- function(mu, sigma, lambda) {
 #' for the convolution of the exponential and Wald distributions,
 #' parameterized for Brownian motion. \code{kappa} refers to the
 #' threshold, \code{xi} refers to the rate of evidence accumulation
-#' towards this threshold, and \code{tau} is the rate parameter
-#' governing the exponentially distribution shift values. Within-trial
-#' variability for the rate of evidence accumulation (the coefficient
-#' of drift) is fixed to 1.
+#' towards this threshold, \code{tau} is the mean for the
+#' exponentially distribution shift values, and \code{sigma} is
+#' the  within-trial variability for the rate of evidence
+#' accumulation (the coefficient of drift, typically fit to 1 for
+#' identification purposes).
 #'
 #' @param n the number of draws for random generation.
 #' @param t a vector of times ( t > 0 ).
@@ -176,6 +177,8 @@ memg <- function(mu, sigma, lambda) {
 #'   (xi \eqn{\ge} 0).
 #' @param tau a vector of inverse rate parameters (the mean of the
 #'   exponentially distributed residual latency; tau > 0).
+#' @param sigma a vector of the within-trial variabilities (the
+#'   coefficient of drift; sigma > 0).
 #' @param ln logical; if \code{TRUE}, probabilities are given as
 #'   log(p).
 #' @param lower_tail logical; if \code{TRUE} (default), probabilities
@@ -188,7 +191,22 @@ memg <- function(mu, sigma, lambda) {
 #'   cumulative probability during estimation of the quantile function.
 #'
 #' @section Details:
-#' Forthcoming
+#' The ex-Wald distribution is the result if one sums two random
+#' variables, one distributed according to the inverse Gaussian
+#' distribution and the other distributed according to an
+#' exponential distribution with rate equal to 1/tau.
+#'
+#' The density is therefore computed from the convolution of the
+#' Wald and exponential distributions. Schwarz (2002) provides a
+#' solution for this convolution. If \eqn{\xi^2} is greater than
+#' \eqn{2 \sigma^2 / \tau }, a straightforward analytic solution
+#' exists (Equation 18). Otherwise, the density is the real
+#' part of a complex function. Schwarz provides a solution in
+#' this case using the complex error function (Equation 9 and 22).
+#' To compute the real and imaginary parts of the complex error
+#' function, the density function uses an algorithm from the
+#' Faddeeva package (Johnson, 2012), with an additional wrapper
+#' taken from the S-PLUS script of Heathcote (2004b).
 #'
 #' A linear interpolation approach is used to approximate the
 #' quantile function, estimating the inverse of the cumulative
@@ -210,20 +228,35 @@ memg <- function(mu, sigma, lambda) {
 #' length of the result.
 #'
 #' @section References:
-#' Forthcoming
+#'
+#' Heathcote, A. (2004a). Fitting Wald and ex-Wald distributions to
+#'   response time data: An example using functions for the S-PLUS
+#'   package. Behavior Research Methods Instruments & Computers, 36,
+#'   678 - 694.
+#'
+#' Heathcote, A. (2004b). rtfit.ssc. Retrieved May 5, 2017 from
+#'   Psychonomic Society Web Archive: http://www.psychonomic.org/ARCHIVE/.
+#'
+#' Johnson, S. G. (2012). Faddeeva Package [Computer software].
+#'   Retrieved from
+#'   http://ab-initio.mit.edu/wiki/index.php/Faddeeva_Package#License
+#'
+#' Schwarz, W. (2002). On the convolution of the inverse Gaussian and
+#'   the exponential random variables. Communications in Statistics,
+#'   Theory and Methods, 31, 2113 - 2121.
 #'
 #' @examples
 #' Forthcoming
 #'
 #' @export
-rexwald <- function(n, kappa, xi, tau) {
-    .Call('seqmodels_rexwald', PACKAGE = 'seqmodels', n, kappa, xi, tau)
+rexwald <- function(n, kappa, xi, tau, sigma = as.numeric( c(1.0))) {
+    .Call('seqmodels_rexwald', PACKAGE = 'seqmodels', n, kappa, xi, tau, sigma)
 }
 
 #' @rdname rexwald
 #' @export
-dexwald <- function(t, kappa, xi, tau, ln = FALSE, ni = FALSE) {
-    .Call('seqmodels_dexwald', PACKAGE = 'seqmodels', t, kappa, xi, tau, ln, ni)
+dexwald <- function(t, kappa, xi, tau, sigma = as.numeric( c(1.0)), ln = FALSE, ni = FALSE) {
+    .Call('seqmodels_dexwald', PACKAGE = 'seqmodels', t, kappa, xi, tau, sigma, ln, ni)
 }
 
 #' The Frechet Distribution

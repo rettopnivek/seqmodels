@@ -7,8 +7,8 @@ A R package with density, distribution, quantile, and random number generation f
 ### Prerequisites
 
 The program R ( version >= 3.0 )
-
 The R package ['Rcpp'](https://cran.r-project.org/web/packages/Rcpp/index.html)
+The R package ['RcppParallel'](https://rcppcore.github.io/RcppParallel/)
 
 ### Installation
 

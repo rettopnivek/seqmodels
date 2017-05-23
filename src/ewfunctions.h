@@ -5,6 +5,7 @@
 #include <Rcpp.h> // Includes certain libraries of functions
 #include "levyfunctions.h" // For drift of 0
 #include "sigfunctions.h" // For inverse gaussian
+#include "complex_error_function.h"
 #include "miscfunctions.h" // Linear interpolation
 #include "gsl/include/gsl_integration.h" // Numerical integration
 #include "gsl/include/gsl_errno.h" // Error handling
@@ -26,6 +27,9 @@ Heathcote, A. (2004a). Fitting Wald and ex-Wald distributions to
   678 - 694.
 Heathcote, A. (2004b). rtfit.ssc. Retrieved May 5, 2017 from
   Psychonomic Society Web Archive: http://www.psychonomic.org/ARCHIVE/.
+Johnson, S. G. (2012). Faddeeva Package [Computer software].
+  Retrieved from
+  http://ab-initio.mit.edu/wiki/index.php/Faddeeva_Package#License
 Schwarz, W. (2002). On the convolution of the inverse Gaussian and
   the exponential random variables. Communications in Statistics,
   Theory and Methods, 31, 2113 - 2121.
@@ -131,7 +135,7 @@ inline std::vector<double> uandv( double x, double y,
                                   int firstblock ) {
   /*
   Purpose:
-  A function to compute the series approximatin to the real(u)
+  A function to compute the series approximation to the real(u)
   and imaginary (v) parts of the complex error function erf( x + iy).
   See Abramowitz and Stegun (1964), 7.1.29. The code is adapted
   from the S-PLUS script of Heathcote (2004).
@@ -206,23 +210,24 @@ inline double rew( double x, double y ) {
   Purpose:
   Computes the real part of the term in the ex-Wald density
   that involves the complex error function. The code is
-  taken from the S-PLUS script of Heathcote (2004).
+  taken from the S-PLUS script of Heathcote (2004). The
+  complex error function is taken from the Faddeeva package
+  (Johnson, 2012).
   Arguments:
   x - A continuous value
   y - A continuous value
-  Notes:
-  The function assumes the series approximation will converge
-  within 20 blocks.
   Returns:
   The real part of the term in the ex-Wald density that involves
   the complex error function.
   */
 
-  std::vector<double> uv = uandv( y, x, 20 );
+  std::complex<double> uv = cmplx_erf( C( y, x ), 0 );
+  double u = real( uv );
+  double v = imag( uv );
 
   double out = exp( pow( y, 2.0 ) - pow( x, 2.0 ) ) *
-    ( cos( 2.0 * x * y ) * ( 1.0 - uv[0] ) +
-    sin( 2.0 * x * y ) * uv[1] );
+    ( cos( 2.0 * x * y ) * ( 1.0 - u ) +
+    sin( 2.0 * x * y ) * v );
 
   return( out );
 }
@@ -383,9 +388,7 @@ inline double dexwald_scl( std::vector<double> prm ) {
     double tau = prm[3];
     double sigma = prm[4];
 
-    // If mean for residual latencies is
-    // larger than 2 ms
-    if ( (tau > 0.002) && (prm[6] == 0.0) ) {
+    if ( prm[6] == 0.0 ) {
 
       // Convert mean residual latency to rate
       double gam = 1.0/tau;
@@ -412,6 +415,7 @@ inline double dexwald_scl( std::vector<double> prm ) {
         out = log( term1) + log( term2 * Phi1 + term3 * Phi2 );
 
       } else {
+        // Compute equation 9 and 22 from Schwarz (2002)
         out = xi * kappa - pow( kappa, 2.0 )/( 2.0 * rt ) -
           rt * pow( xi, 2.0)/2.0;
         out += log( rew( sqrt( -rt * k / 2.0 ),

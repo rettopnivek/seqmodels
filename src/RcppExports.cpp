@@ -81,8 +81,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rexwald
-Rcpp::NumericVector rexwald(int n, Rcpp::NumericVector kappa, Rcpp::NumericVector xi, Rcpp::NumericVector tau);
-RcppExport SEXP seqmodels_rexwald(SEXP nSEXP, SEXP kappaSEXP, SEXP xiSEXP, SEXP tauSEXP) {
+Rcpp::NumericVector rexwald(int n, Rcpp::NumericVector kappa, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector sigma);
+RcppExport SEXP seqmodels_rexwald(SEXP nSEXP, SEXP kappaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP sigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -90,13 +90,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type kappa(kappaSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type xi(xiSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau(tauSEXP);
-    __result = Rcpp::wrap(rexwald(n, kappa, xi, tau));
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
+    __result = Rcpp::wrap(rexwald(n, kappa, xi, tau, sigma));
     return __result;
 END_RCPP
 }
 // dexwald
-Rcpp::NumericVector dexwald(Rcpp::NumericVector t, Rcpp::NumericVector kappa, Rcpp::NumericVector xi, Rcpp::NumericVector tau, bool ln, bool ni);
-RcppExport SEXP seqmodels_dexwald(SEXP tSEXP, SEXP kappaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP lnSEXP, SEXP niSEXP) {
+Rcpp::NumericVector dexwald(Rcpp::NumericVector t, Rcpp::NumericVector kappa, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector sigma, bool ln, bool ni);
+RcppExport SEXP seqmodels_dexwald(SEXP tSEXP, SEXP kappaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP sigmaSEXP, SEXP lnSEXP, SEXP niSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -104,9 +105,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type kappa(kappaSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type xi(xiSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
     Rcpp::traits::input_parameter< bool >::type ln(lnSEXP);
     Rcpp::traits::input_parameter< bool >::type ni(niSEXP);
-    __result = Rcpp::wrap(dexwald(t, kappa, xi, tau, ln, ni));
+    __result = Rcpp::wrap(dexwald(t, kappa, xi, tau, sigma, ln, ni));
     return __result;
 END_RCPP
 }
