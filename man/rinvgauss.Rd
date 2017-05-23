@@ -2,89 +2,168 @@
 % Please edit documentation in R/RcppExports.R
 \name{rinvgauss}
 \alias{dinvgauss}
+\alias{minvgauss}
 \alias{pinvgauss}
 \alias{qinvgauss}
 \alias{rinvgauss}
-\title{The Inverse Gaussian Distribution}
+\title{The Shifted Inverse Gaussian Distribution}
 \usage{
-rinvgauss(N, kappa, xi, sigma)
+rinvgauss(n, kappa, xi, tau = as.numeric(c(0)), sigma = as.numeric(c(1)))
 
-dinvgauss(t, kappa, xi, sigma, ln = 0L)
+dinvgauss(t, kappa, xi, tau = as.numeric(c(0)), sigma = as.numeric(c(1)),
+  ln = FALSE)
 
-pinvgauss(t, kappa, xi, sigma)
+pinvgauss(t, kappa, xi, tau = as.numeric(c(0)), sigma = as.numeric(c(1)),
+  ln = FALSE, lower_tail = TRUE)
 
-qinvgauss(p, kappa, xi, sigma, mxT = 4, em_stop = 20L, err = 1e-04)
+qinvgauss(p, kappa, xi, tau = as.numeric(c(0)), sigma = as.numeric(c(1)),
+  bounds = 3, em_stop = 20, err = 1e-08)
+
+minvgauss(kappa, xi, tau = as.numeric(c(0)), sigma = as.numeric(c(1)))
 }
 \arguments{
-\item{N}{the number of draws for random generation.}
+\item{n}{the number of draws for random generation.}
 
 \item{kappa}{a vector of thresholds determining when a decision
 terminates (kappa > 0).}
 
 \item{xi}{a vector of drift rates, or rates of evidence accumulation
-(xi > 0).}
+(xi \eqn{\ge} 0).}
+
+\item{tau}{a vector of shift parameters denoting the lowest
+possible time that can be observed (0 \eqn{\ge} tau < t).}
 
 \item{sigma}{a vector of the within-trial variabilities
 (sigma > 0).}
 
-\item{t}{a vector of quantiles (typically response times).}
+\item{t}{a vector of times ( t > 0 ).}
 
-\item{ln}{indicates whether the log-likelihood should be returned,
-where 1 = True, 0 = False (the default).}
+\item{ln}{logical; if \code{TRUE}, probabilities are given as
+log(p).}
 
-\item{mxT}{the maximum time that the quantile function algorithm is
-applied to.}
+\item{lower_tail}{logical; if \code{TRUE} (default), probabilities
+are \eqn{P(X \le x)} otherwise \eqn{P( X > x)}.}
 
-\item{err}{the desired degree of precision for the linear interpolation
-used in the quantile function.}
+\item{bounds}{upper limit of the quantiles to explore  for the
+approximation via linear interpolation.}
 
-\item{em_step}{the maximum number of iterations for the linear
-interpolation used in the quantile function.}
+\item{em_stop}{the maximum number of iterations to attempt to
+find the quantile via linear interpolation.}
+
+\item{err}{the number of decimals places to approximate the
+cumulative probability during estimation of the quantile function.}
+}
+\value{
+\code{dinvgauss} gives the density, \code{pinvgauss} gives the
+distribution function, \code{qinvgauss} approximates the quantile
+function, \code{minvgauss} computes the descriptive moments (mean,
+variance, standard deviation, skew, and excess kurtosis), and
+\code{rinvgauss} generates random deviates.
+
+The length of the result is determined by \code{n} for
+\code{rinvgauss}, and is the maximum of the length of the
+numerical arguments for the other functions.
+
+The numerical arguments other than \code{n} are recycled to the
+length of the result.
 }
 \description{
 Random generation, density, distribution, and quantile functions
-for the inverse gaussian (or Wald) distribution.
+for the shifted inverse gaussian (or Wald) distribution,
+parameterized for Brownian motion. \code{kappa} refers to the
+threshold, \code{xi} refers to the rate of evidence accumulation
+towards this threshold, \code{tau} is the shift in response times
+and \code{sigma} refers to the within-trial variability for the
+rate of evidence accumulation (the coefficient of drift, typically
+fixed to 1).
 }
 \section{Details}{
 
 The inverse gaussian distribution describes the first passage times
 through a positive threshold kappa for a space and time homogenous
-Wiener diffusion process. The current functions use a parameterization
-suitable for sequential sampling models.
+Wiener diffusion process.
 
-For unequal vector lengths, values are recycled.
+A linear interpolation approach is used to approximate the
+quantile function, estimating the inverse of the cumulative
+distribution function via an iterative procedure. When
+the precision of this estimate is set to 8 decimal places,
+the approximation will be typically accurate to about half of a
+millisecond.
+
+The example section demonstrates how to compute maximum likelihood
+estimates based on the moments from a set of data.
 }
 
 \section{References}{
 
-Johnson, N. L., Kotz, S., & Balakrishnan, N. (1994). Inverse Gaussian
-  (Wald) distributions. In N. L. Johnson, S. Kotz, & N. Balakrishnan
-  (Eds.), Continuous univariate distributions (2nd ed., Vol. 1, pp.
-  259-297). New York: Wiley.
-Michael, J. R., Schucany, W. R., & Haas, R. W. (1976). Generating
-  random variates using transformations with multiple roots.
-  The American Statistician, 30 (2), 88-90. doi:10.2307/2683801.
+
+Dagpunar, J. (1988). Principles of Random Variate Generation.
+  Oxford: Clarendon Press.
+
+Heathcote, A. (2004a). Fitting Wald and ex-Wald distributions to
+  response time data: An example using functions for the S-PLUS
+  package. Behavior Research Methods Instruments & Computers, 36,
+  678 - 694.
+
+Heathcote, A. (2004b). rtfit.ssc. Retrieved May 5, 2017 from
+  Psychonomic Society Web Archive:
+  http://www.psychonomic.org/ARCHIVE/.
 }
 \examples{
-# Treatment of illegal values and vectorization
-set.seed(100)
-rinvgauss(8,c(1,2,-1,1),c(1,.5,1,-1),c(1,1,1,1)) # Returns NA
-dinvgauss( c(.5, -1), c(1,2,-1,1),c(1,.4,1,-1),c(1,1,1,1) ) # Returns 0
-pinvgauss( c(.5, -1), c(1,2,-1,1),c(1,.4,1,-1),c(1,1,1,1) ) # Returns 0
-
-# Demonstrates how parameters kappa and xi scale with different values of sigma
-t = seq(0,1,length=1000)
-plot( t, dinvgauss(t,.1,.2,.1), type = 'l', bty ='l', xlab = 'Time', ylab = 'Density', lwd = 2 )
-lines( t, dinvgauss(t,1,2,1), col = 'red', lty = 2, lwd = 2 )
-
+# Density
+dinvgauss( .9758, kappa = 1.0, xi = 1.0, tau = 0.3 )
 # Distribution function
-plot( t, pinvgauss(t,1,2,1), type = 'l', xlab = 'Time', ylab = 'Distribution', bty = 'l', yaxt = 'n' )
-axis(2,seq(.2,.8,.2))
-# Quantile function
-prb = seq( .2, .8, .2 ) # Probabilities
-qnt = qinvgauss( prb, 1, 2, 1 )
-segments( rep(0,length(prb)), prb, qnt, prb )
-segments( qnt,rep(0,length(prb)), qnt, prb )
+pinvgauss( .9758, kappa = 1.0, xi = 1.0, tau = 0.3 )
+# Quantile function (Accurate to ~4 decimal places)
+round( qinvgauss( p = .5, kappa = 1.0, xi = 1.0, tau = 0.3 ), 4 )
+# Descriptive moments
+minvgauss( kappa = 1.0, xi = 1.0, tau = 0.3 )
+
+# Simulation (No shift)
+sim = rinvgauss( 1000, kappa = 0.8, xi = 2.0 )
+
+# Function to obtain maximum likelihood estimates
+param_est = function( dat, tau_hat = 0 ) {
+  # Estimate threshold and drift from first two moments of
+  # data (Heathcote, 2004):
+  dat = dat - tau_hat # Apply shift
+  xi_hat = sqrt( mean( dat )/var( dat ) );
+  kappa_hat = xi_hat * mean( dat )
+  return( c( kappa = kappa_hat, xi = xi_hat, tau = tau_hat ) )
+}
+print( param_est( sim ) )
+
+# Non-zero shift parameter
+sim = rinvgauss( 1000, kappa = 1.6, xi = 1.5, tau = .3 )
+
+# Estimating shift parameter
+
+# Function to compute sum of log-likelihoods
+f = function( tau_hat, dat ) {
+  prm = param_est( dat, tau_hat = tau_hat )
+  sll = sum( dinvgauss( dat, prm[1], prm[2], tau = prm[3], ln = T ) )
+  return( sll )
+}
+tau_hat = optimize( f, c( 0.0, min( sim ) ), dat = sim, maximum = T )
+print( param_est( sim, tau_hat = tau_hat$maximum ) )
+
+# Plotting
+layout( matrix( 1:4, 2, 2, byrow = T ) )
+# Parameters
+prm = c( k = 0.8, x = 1.6, t = 0.3, s = 1.0 )
+# Density
+obj = quickdist( 'sig', 'PDF', prm )
+plot( obj ); lines( obj )
+# CDF
+obj = quickdist( 'sig', 'CDF', prm )
+plot( obj ); lines( obj )
+# Quantiles
+obj = quickdist( 'sig', 'QF', prm, x = seq( .2, .8, .2 ) )
+plot( obj ); prb = seq( .2, .8, .2 )
+abline( h = prb, lty = 2 ); lines( obj, type = 'b', pch = 19 )
+# Hazard function
+obj = quickdist( 'sig', 'HF', prm )
+plot( obj ); lines( obj )
 
 }
 

@@ -7,66 +7,86 @@
 \alias{rwaldrace}
 \title{The Wald Race Model}
 \usage{
-rwaldrace(N, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)), rl = 0L)
+rwaldrace(n, k1, x1, t1, k0, x0, t0, s1 = as.numeric(c(1)),
+  s0 = as.numeric(c(1)), rl = FALSE, parYes = FALSE)
 
-dwaldrace(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)), rl = 0, ln = 0L)
+dwaldrace(rt, ch, k1, x1, t1, k0, x0, t0, s1 = as.numeric(c(1)),
+  s0 = as.numeric(c(1)), rl = FALSE, ln = FALSE, parYes = TRUE)
 
-pwaldrace(rt, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)), rl = 0, parYes = 1L)
+pwaldrace(rt, ch, k1, x1, t1, k0, x0, t0, s1 = as.numeric(c(1)),
+  s0 = as.numeric(c(1)), rl = FALSE, ln = FALSE, lower_tail = TRUE,
+  parYes = TRUE)
 
-qwaldrace(p, ch, k1, xi1, tau1, k0, xi0, tau0, s1 = as.numeric(c(1)),
-  s0 = as.numeric(c(1)), rl = 0, mxRT = 4, em_stop = 20, err = 0.001,
-  joint = 1, parYes = 1L)
+qwaldrace(p, ch, k1, x1, t1, k0, x0, t0, s1 = as.numeric(c(1)),
+  s0 = as.numeric(c(1)), rl = FALSE, bounds = 3, em_stop = 20,
+  err = 1e-08, parYes = TRUE)
 }
 \arguments{
-\item{N}{the number of observations to simulate.}
+\item{n}{the number of draws for random generation.}
 
 \item{k1}{the threshold determining when a decision terminates for
-choices == 1 ( k1 > 0).}
+choices coded as 1 ( \code{k1} > 0).}
 
-\item{xi1}{the average rate of evidence accumulation within a trial
-for choices == 1 (xi1 > 0).}
+\item{x1}{the average rate of evidence accumulation within a trial
+for choices coded as 1 (\code{x1} \eqn{\ge} 0).}
 
-\item{tau1}{the residual latency for choices == 1 (tau1 >= 0).}
+\item{t1}{the residual latency for choices coded as 1
+(\code{t1} \eqn{\ge} 0).}
 
 \item{k0}{the threshold determining when a decision terminates for
-choices == 0 ( k0 > 0).}
+choices coded as 0 ( \code{k1} > 0).}
 
-\item{xi0}{the average rate of evidence accumulation within a trial
-for choices == 0 (xi0 > 0).}
+\item{x0}{the average rate of evidence accumulation within a trial
+for choices coded as 0 (\code{x1} \eqn{\ge} 0).}
 
-\item{tau0}{the residual latency for choices == 0 (tau0 >= 0).}
+\item{t0}{the residual latency for choices coded as 0
+(\code{t0} \eqn{\ge} 0).}
 
-\item{s1}{the within trial variability for choices == 1 (s1 > 0).}
+\item{s1}{the within trial variability for choices coded as 1
+(\code{s1} > 0).}
 
-\item{s0}{the within trial variability for choices == 0 (s0 > 0).}
+\item{s0}{the within trial variability for choices coded as 0
+(\code{s0} > 0).}
 
-\item{rl}{if 1, the residual latency impacts the decision rule.}
+\item{rl}{logical; if \code{TRUE}, the residual latency shifts
+the finishing times for each racer before they are compared.
+Otherwise, the residual latency shifts the winning finishing
+times.}
 
-\item{rt}{a vector of response times (rt > 0).}
+\item{parYes}{logical; if \code{TRUE} the code is run in parallel.}
 
-\item{ch}{a vector of choices (ch = {0,1}).}
+\item{rt}{a vector of responses times ( rt > 0 ).}
 
-\item{ln}{indicates whether the log-likelihood should be returned,
-where 1 = True, 0 = False (the default).}
+\item{ch}{a vector of accuracy/choice values ( ch = {0,1} ).}
 
-\item{parYes}{if set to 1, the code is run in parallel.}
+\item{ln}{logical; if \code{TRUE}, probabilities are given as
+log(p).}
 
-\item{mxRT}{the maximum RT response time value that the algorithm is applied to.}
+\item{lower_tail}{logical; if \code{TRUE} (default), probabilities
+are \eqn{P(X \le x)} otherwise \eqn{P( X > x)}.}
 
-\item{err}{the desired degree of precision for the linear interpolation.}
+\item{p}{a vector of probabilities.}
 
-\item{joint}{If 1, indicates that the probabilities are based on the joint
-distribution function.}
+\item{bounds}{upper limit of the quantiles to explore
+for the approximation via linear interpolation.}
 
-\item{em_step}{the maximum number of iterations for the linear interpolation.}
+\item{em_stop}{the maximum number of iterations to attempt to
+find the quantile via linear interpolation.}
+
+\item{err}{the number of decimals places to approximate the
+cumulative probability during estimation of the quantile function.}
 }
-\description{
-Random generation, density, distribution, and quantile functions for
-a two accumulator version of the Wald (or diffusion) race model
-(Logan et al., 2014).
+\value{
+\code{dwaldrace} gives the density, \code{pwaldrace} approximates the
+distribution function, \code{qwaldrace} approximates the quantile
+function, and \code{rwaldrace} generates random deviates.
+
+The length of the result is determined by \code{n} for
+\code{rwaldrace}, and is the maximum of the length of the numerical
+arguments for the other functions.
+
+The numerical arguments other than \code{n} are recycled to the
+length of the result.
 }
 \section{Details}{
 
@@ -74,20 +94,25 @@ The Wald (or diffusion) race model assumes that two independent one
 boundary diffusion processes race each other. Whichever racer reaches
 its threshold first determines the choice and response time. Because
 of the independence, the likelihood for the Wald race model is:
-\deqn{ f(t,y|\alpha)*(1-F(t,y|\beta)},
+\deqn{ f(t,y|\alpha)*(1-F(t,y|\beta),}
 where \eqn{\alpha} and \eqn{\beta} are the sets of parameters for
 the Wald distribution describing the finishing times for the
 winning and losing racer respectively, and \eqn{f} and \eqn{F} refer
 to the density and distribution functions respectively.
-}
 
-\section{Notes}{
+The distribution function is estimated using numerical integration
+via Gaussian quadrature.
 
-For unequal vector lengths, values are recycled. For random draws,
-inadmissible values return NA.
+A linear interpolation approach is used to approximate the
+quantile function, estimating the inverse of the cumulative
+distribution function via an iterative procedure. When
+the precision of this estimate is set to 8 decimal places,
+the approximation will be typically accurate to about half of a
+millisecond.
 }
 
 \section{References}{
+
 
 Logan, G. D., Van Zandt, T., Verbruggen, F., & Wagenmakers, E. J.
   (2014). On the ability to inhibit thought and action: General
@@ -95,28 +120,44 @@ Logan, G. D., Van Zandt, T., Verbruggen, F., & Wagenmakers, E. J.
   121, 66.
 }
 \examples{
-# Treatment of illegal values and vectorization
-set.seed(200)
-rwaldrace( 8, c(1,2,-1,1), c(4,1,1,1), c(.2,-.1), 1, 1, .2 ) # Returns NA
-dwaldrace( .5, 1, c(1,-2,1), 4, .2, c(1,1,-2), 1, .2 )
-
 # Density function
-rt = seq(0,1,length=1000)
-plot( rt, dwaldrace( rt, 1, .1, .4, .2, .1, .2, .2, s1 = .1, s0 = .1 ),
-  type = 'l', bty ='l', xlab = 'Time', ylab = 'Density' )
-lines( rt, dwaldrace( rt, 0, 1, 4, .2, 1, 2, .2 ), lty = 2 )
-
+dwaldrace( .5, c(1,0), k1 = 1.2, x1 = 2.0, t1 = .2,
+  k0 = 1.0, x0 = 0.8, t0 = .2 )
 # Distribution function
-rt = seq(0,2,length=1000)
-pwaldrace( Inf, 1, 1.8, 3, .2, 1.4, 1, .2 ) # Choice probabilities
-plot( rt, pwaldrace( rt, 1, 1.8, 3, .2, 1.4, 1, .2 ), type = 'l',
-  xlab = 'Time', ylab = 'Distribution', bty = 'l', yaxt = 'n' )
-axis(2,seq(.2,.8,.2))
-# Quantile function
-prb = seq( .1, .7, .2 ) # Probabilities
-qnt = qwaldrace( prb, 1, 1.8, 3, .2, 1.4, 1, .2 )
-segments( rep(0,length(prb)), prb, qnt, prb )
-segments( qnt,rep(0,length(prb)), qnt, prb )
+pwaldrace( .5, c(1,0), k1 = 1.2, x1 = 2.0, t1 = .2,
+  k0 = 1.0, x0 = 0.8, t0 = .2 )
+# Choice probabilities
+pwaldrace( Inf, c(1,0), k1 = 1.2, x1 = 2.0, t1 = .2,
+  k0 = 1.0, x0 = 0.8, t0 = .2 )
+# Quantile function (Accurate to ~4 decimal places)
+qwaldrace( .5, c(1,0), k1 = 1.2, x1 = 2.0, t1 = .2,
+  k0 = 1.0, x0 = 0.8, t0 = .2 )
+
+# Simulate values
+sim = rwiener( n = 100, alpha = 0.8, theta = 0.6,
+  xi = 0.0, tau = 0.3 )
+
+# Plotting
+layout( matrix( 1:4, 2, 2, byrow = T ) )
+# Parameters
+prm = c( k1 = 1.2, x1 = 2.0, t1 = .2, k0 = 1.0,
+  x0 = 0.5, t0 = .2 )
+# Density
+obj = quickdist( 'wr', 'PDF', prm )
+plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
+# CDF
+obj = quickdist( 'wr', 'CDF', prm )
+plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
+# Quantiles
+obj = quickdist( 'wr', 'QF', prm, x = seq( .2, .8, .2 ) )
+plot( obj ); prb = seq( .2, .8, .2 )
+abline( h = prb, lty = 2 )
+# Conditional, not joint
+lines( obj, type = 'b', pch = 19, weight = 1 )
+lines( obj, ch = 0, type = 'b', pch = 17, lty = 2, weight = 1 )
+# Hazard function
+obj = quickdist( 'wr', 'HF', prm )
+plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
 
 }
 

@@ -2,56 +2,162 @@
 % Please edit documentation in R/RcppExports.R
 \name{remg}
 \alias{demg}
+\alias{memg}
 \alias{pemg}
 \alias{qemg}
 \alias{remg}
 \title{The Exponentially Modified Gaussian Distribution}
 \usage{
-remg(N, mu, sigma, lambda)
+remg(n, mu, sigma, lambda)
 
-demg(x, mu, sigma, lambda, ln = 0L)
+demg(x, mu, sigma, lambda, ln = FALSE)
 
-pemg(x, mu, sigma, lambda)
+pemg(q, mu, sigma, lambda, ln = FALSE, lower_tail = TRUE)
 
-qemg(p, mu, sigma, lambda, mnRT = -1, mxRT = 4, em_stop = 20L,
-  err = 0.001)
+qemg(p, mu, sigma, lambda, bounds = as.numeric(c(0, 3)), em_stop = 20,
+  err = 1e-08)
+
+memg(mu, sigma, lambda)
 }
 \arguments{
-\item{N}{the number of draws for random generation.}
+\item{n}{number of observations to be generated.}
 
-\item{mu}{a vector of the means for the gaussian variable.}
+\item{mu}{vector of location parameters for the gaussian
+variable.}
 
-\item{sigma}{a vector of standard deviations for the gaussian variable
-(sigma > 0).}
+\item{sigma}{vector of scale parameters (i.e., standard
+deviations) for the gaussian variable (sigma > 0).}
 
-\item{lambda}{a vector of rates for the exponential variable
-(lambda > 0).}
+\item{lambda}{vector of rate parameters for the exponential
+variable (lambda > 0).}
 
-\item{x}{a vector of quantiles.}
+\item{x, q}{vector of quantiles.}
 
-\item{ln}{indicates whether the log-likelihood should be returned,
-where 1 = True, 0 = False (the default).}
+\item{ln}{logical; if \code{TRUE}, probabilities are given as
+log(p).}
+
+\item{lower_tail}{logical; if \code{TRUE} (default), probabilities
+are \eqn{P(X \le x)} otherwise \eqn{P( X > x)}.}
+
+\item{p}{vector of probabilities.}
+
+\item{bounds}{lower and upper limits of the quantiles to explore
+for the approximation via linear interpolation.}
+
+\item{em_stop}{the maximum number of iterations to attempt to
+find the quantile via linear interpolation.}
+
+\item{err}{the number of decimals places to approximate the
+cumulative probability during estimation of the quantile function.}
+}
+\value{
+\code{demg} gives the density, \code{pemg} gives the
+distribution function, \code{qemg} gives the quantile function,
+\code{memg} computes the descriptive moments (mean, variance,
+standard deviation, skew, and excess kurtosis), and \code{remg}
+generates random deviates.
+
+The length of the result is determined by \code{n} for
+\code{remg}, and is the maximum of the lengths of the numerical
+arguments for the other functions.
+
+The numerical arguments other than \code{n} are recycled to the
+length of the result.
 }
 \description{
-Random generation, density, distribution, and quantile functions for
-the distribution of the convolution of gaussian and exponential
-random varibles.
+Random generation, density, distribution, quantile, and
+descriptive moments functions for the the convolution of gaussian
+and exponential random variables (the ex-gaussian distribution),
+with location equal to \code{mu}, scale equal to \code{sigma} and
+rate equal to \code{lambda}.
 }
 \section{Details}{
 
 An exponentially modified gaussian distribution describes the sum of
 independent normal and exponential random variables, possessing
 a characteristic positive skew due to the exponential variable.
+The ex-gaussian distribution is therefore useful for providing
+descriptive fits to response time distributions (e.g., Luce, 1986).
 
-For unequal vector lengths, values are recycled.
+A linear interpolation approach is used to approximate the
+quantile function, estimating the inverse of the cumulative
+distribution function via an iterative procedure. When
+the precision of this estimate is set to 8 decimal places,
+the approximation will be typically accurate to about half of a
+millisecond.
+
+The example section demonstrates how to compute maximum likelihood
+estimates based on the moments from a set of data.
 }
 
 \section{References}{
 
-Forthcoming
+
+Luce, R. D. (1986). Response times: Their role in inferring
+  elementary mental organization. New York, New York: Oxford
+  University Press.
+
+Terriberry, T. B. (2007). Computing Higher-Order Moments Online.
+  Retrieved from https://people.xiph.org/~tterribe/notes/homs.html
 }
 \examples{
-Forthcoming
+# Density function
+demg( x = 0.8758, mu = 0.0, sigma = 1.0, lambda = 1.0 )
+# Distribution function
+pemg( q = 0.8758, mu = 0.0, sigma = 1.0, lambda = 1.0 )
+# Quantile function (Accurate to ~4 decimal places)
+round( qemg( p = .5, mu = 0.0, sigma = 1.0, lambda = 1.0 ), 4 )
+# Descriptive moments
+memg( mu = 0.44, sigma = 0.07, lambda = 2.0 )
+
+# Simulation
+sim = remg( n = 1000, mu = 0.44, sigma = 0.07, lambda = 2.0 );
+
+# Function to obtain maximum likelihood estimates
+param_est = function( dat ) {
+  # Compute 1st, 2nd, and 3rd moments ( Terriberry, 2007).
+  n = 0; m = 0; m2 = 0; m3 = 0;
+  for ( k in 1:length( dat ) ) {
+    n1 = n; n = n + 1
+    term1 = dat[k] - m; term2 = term1/ n; term3 = term1 * term2 * n1
+    # Update first moment
+    m = m + term2
+    # Update third moment
+    m3 = m3 + term3 + term2 * (n - 2) - 3 * term2 * m2
+    # Update second moment
+    m2 = m2 + term3
+  }
+  # Compute standard deviation of sample
+  s = sqrt( m2 / ( n - 1.0 ) )
+  # Compute skewness of sample
+  y = sqrt( n ) * m3 / ( m2^1.5 );
+  # Estimate parameters
+  mu_hat = m - s * ( y/2 )^(1/3)
+  sigma_hat = sqrt( (s^2) * ( 1 - (y/2)^(2/3) ) )
+  lambda_hat = 1/( s * (y/2)^(1/3) )
+  return( c( mu = mu_hat, sigma = sigma_hat, lambda = lambda_hat ) )
+}
+
+print( param_est( sim ) )
+
+# Plotting
+layout( matrix( 1:4, 2, 2, byrow = T ) )
+# Parameters
+prm = c( m = .44, s = .07, l = 2.0 )
+# Density
+obj = quickdist( 'emg', 'PDF', prm )
+plot( obj ); lines( obj )
+# CDF
+obj = quickdist( 'emg', 'CDF', prm )
+plot( obj ); lines( obj )
+# Quantiles
+obj = quickdist( 'emg', 'QF', prm, x = seq( .2, .8, .2 ) )
+plot( obj ); prb = seq( .2, .8, .2 );
+abline( h = prb, lty = 2 );
+lines( obj, type = 'b', pch = 19 )
+# Hazard function
+obj = quickdist( 'emg', 'HF', prm )
+plot( obj ); lines( obj )
 
 }
 
