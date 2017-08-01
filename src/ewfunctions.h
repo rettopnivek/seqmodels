@@ -33,12 +33,15 @@ Johnson, S. G. (2012). Faddeeva Package [Computer software].
 Schwarz, W. (2002). On the convolution of the inverse Gaussian and
   the exponential random variables. Communications in Statistics,
   Theory and Methods, 31, 2113 - 2121.
+
 Index
 Lookup - 01:  ew_param_verify
-Lookup - 02:  uandv
-Lookup - 03:  rew
-Lookup - 04:  rexwald_scl
-Lookup - 05:  dexwald_scl
+Lookup - 02:  rew
+Lookup - 03:  conv_dig_dexp
+Lookup - 04:  dexwald_ni
+Lookup - 05:  rexwald_scl
+Lookup - 06:  dexwald_scl
+Lookup - 07:  pexwald_scl
 */
 
 // Lookup - 01
@@ -131,80 +134,6 @@ inline bool ew_param_verify( std::vector<double> prm,
 
 // Lookup - 02
 
-inline std::vector<double> uandv( double x, double y,
-                                  int firstblock ) {
-  /*
-  Purpose:
-  A function to compute the series approximation to the real(u)
-  and imaginary (v) parts of the complex error function erf( x + iy).
-  See Abramowitz and Stegun (1964), 7.1.29. The code is adapted
-  from the S-PLUS script of Heathcote (2004).
-  Arguments:
-  x          - A continuous value
-  y          - A continuous value
-  firstblock - The number of blocks to use in the series
-               approximation
-  Returns:
-  A vector with the real and imaginary parts of the complex
-  error function.
-  */
-
-  // Part 1
-  double twoxy = 2.0 * x * y;
-  double xsq = pow( x, 2.0 );
-  double iexpxsqpi = 1.0 / ( M_PI * exp(xsq) );
-
-  // Part 2
-  double sin2xy = sin(twoxy);
-  double cos2xy = cos(twoxy);
-
-  // Part 3 - 5
-
-  // Vector declarations
-  std::vector<double> nmat( firstblock );
-  std::vector<double> nsqmat( firstblock );
-  std::vector<double> ny( firstblock );
-  std::vector<double> twoxcoshny( firstblock );
-  std::vector<double> nsinhny( firstblock );
-  std::vector<double> nsqfrac( firstblock );
-  double sm_1 = 0.0; // Define terms for summations
-  double sm_2 = 0.0;
-
-  // Loop
-  for ( int i = 0; i < firstblock; i++ ) {
-    nmat[i] = i + 1;
-    nsqmat[i] = nmat[i] * nmat[i];
-    ny[i] = nmat[i] * y;
-    twoxcoshny[i] = 2.0 * x * cosh(ny[i]);
-    nsinhny[i] = nmat[i] * sinh( ny[i] );
-    nsqfrac[i] = ( exp( -1.0 * nsqmat[i]/4.0 ) /
-      ( nsqmat[i] + 4.0 * xsq ) );
-    // Take dot product
-    sm_1 += nsqfrac[i] * ( 2.0 * x - twoxcoshny[i] * cos2xy +
-      nsinhny[i] * sin2xy );
-    sm_2 += nsqfrac[i] *
-      ( twoxcoshny[i] * sin2xy + nsinhny[i] * cos2xy );
-  }
-
-  // Part 6
-  double u;
-  u = 2.0 * R::pnorm( x * sqrt( 2.0 ), 0.0, 1.0, 1, 0 ) - 1.0;
-  u += iexpxsqpi*( ( ( 1.0 - cos2xy )/( 2.0 * x ) ) + 2.0*sm_1 );
-
-  // Part 7
-  double v;
-  v = iexpxsqpi * ( ( sin2xy/( 2.0 * x ) ) + 2.0 * sm_2 );
-
-  // Return real and imaginary parts
-  std::vector<double> out(2);
-  out[0] = u;
-  out[1] = v;
-
-  return(out);
-}
-
-// Lookup - 03
-
 inline double rew( double x, double y ) {
   /*
   Purpose:
@@ -232,7 +161,7 @@ inline double rew( double x, double y ) {
   return( out );
 }
 
-// Lookup - 04
+// Lookup - 03
 
 inline double conv_dig_dexp( double x, void * params) {
   /*
@@ -264,16 +193,24 @@ inline double conv_dig_dexp( double x, void * params) {
   return out;
 }
 
-// Lookup - 05
+// Lookup - 04
 
 inline double dexwald_ni( std::vector<double> par ) {
   /*
   Purpose:
-  ...
+  A scalar function that computes the convolution of
+  the wald and exponential functions via numerical
+  integration.
   Arguments:
-  par - ...
+  par - A vector of parameters, where...
+  par[0] =  = Response time
+  par[1] = A threshold
+  par[2] = A drift rate
+  par[3] = The mean of the exponential component
+  par[4] = The coefficient of drift
   Returns:
-  ...
+  The convolution of the inverse gaussian and exponential
+  densities.
   */
 
   // Turn off GSL error handler
@@ -304,8 +241,7 @@ inline double dexwald_ni( std::vector<double> par ) {
   return( result );
 }
 
-
-// Lookup - 06
+// Lookup - 05
 
 inline double rexwald_scl( std::vector<double> prm ) {
   /*
@@ -348,7 +284,7 @@ inline double rexwald_scl( std::vector<double> prm ) {
   return( out );
 }
 
-// Lookup - 07
+// Lookup - 06
 
 inline double dexwald_scl( std::vector<double> prm ) {
   /*
@@ -429,6 +365,62 @@ inline double dexwald_scl( std::vector<double> prm ) {
 
   // If specified return the density
   if (ln==0.0) out = exp(out);
+
+  return( out );
+}
+
+// Lookup - 07
+
+inline double pexwald_scl( std::vector<double> prm ) {
+  /*
+  Purpose:
+  Scalar function to compute the distribution function for
+  the ex-Wald distribution. Code is taken from the S-PLUS
+  script of Heathcote (2004).
+  Arguments:
+  prm - A vector of parameters, where...
+  prm[0] = A response time
+  prm[1] = A threshold
+  prm[2] = A drift rate
+  prm[3] = The mean for the exponential component
+  prm[4] = The coefficient of drift
+  prm[5] = An indicator for numerical integration
+  Returns:
+  The likelihood or log-likelihood.
+  */
+
+  // Initialize output
+  double out = 0.0;
+
+  // Define index
+  std::vector<int> index = create_range( 1, 5 );
+
+  // Check for valid inputs
+  if ( ew_param_verify( prm, index ) ) {
+
+    double tau = prm[3]; // Extract mean residual latency
+
+    // Create input vectors for the wald and
+    // ex-wald components
+    std::vector<double> wp(5);
+    std::vector<double> ewp(7);
+
+    wp[0] = prm[0]; ewp[0] = prm[0];
+    // Threshold
+    wp[1] = prm[1]; ewp[1] = prm[1];
+    // Drift rate
+    wp[2] = prm[2]; ewp[2] = prm[2];
+    // Shift parameter
+    wp[3] = 0.0; ewp[3] = prm[3];
+    // Coefficient of drift
+    wp[4] = prm[4]; ewp[4] = prm[4];
+    // Additional parameters
+    ewp[5] = 0;
+    ewp[6] = prm[5];
+
+    out = pinvgauss_scl(wp) - tau * dexwald_scl(ewp);
+
+  }
 
   return( out );
 }

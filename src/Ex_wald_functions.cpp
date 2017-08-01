@@ -204,3 +204,58 @@ Rcpp::NumericVector dexwald( Rcpp::NumericVector t,
 
   return( out );
 }
+
+// Lookup - 03
+//' @rdname rexwald
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector pexwald( Rcpp::NumericVector t,
+                             Rcpp::NumericVector kappa,
+                             Rcpp::NumericVector xi,
+                             Rcpp::NumericVector tau =
+                               Rcpp::NumericVector::create(0.0),
+                             Rcpp::NumericVector sigma =
+                               Rcpp::NumericVector::create(1.0),
+                             bool ln = false,
+                             bool lower_tail = true,
+                             bool ni = false ) {
+
+  // Determine the longest input vector
+  int n = max( Rcpp::NumericVector::create(
+    t.size(), kappa.size(), xi.size(), tau.size(), sigma.size() ) );
+
+  // Initialize output
+  Rcpp::NumericVector out(n);
+
+  // Create matrix whose rows are inputs
+  // to the scalar function
+  Rcpp::NumericVector expanded_input(n);
+  Rcpp::NumericMatrix input( n, 5 );
+
+  // Fill matrix
+  expanded_input = t[ create_index( n, t.size() ) ];
+  input.column(0) = expanded_input;
+  expanded_input = kappa[ create_index( n, kappa.size() ) ];
+  input.column(1) = expanded_input;
+  expanded_input = xi[ create_index( n, xi.size() ) ];
+  input.column(2) = expanded_input;
+  expanded_input = tau[ create_index( n, tau.size() ) ];
+  input.column(3) = expanded_input;
+  expanded_input = sigma[ create_index( n, sigma.size() ) ];
+  input.column(4) = expanded_input;
+  // Determine if numerical integration should be used
+  int ni_yes = 0; if ( ni ) ni_yes = 1;
+
+  // Calculate CDF
+  for (int r = 0; r < n; r++) {
+    std::vector<double> prm(6);
+    for ( int c = 0; c < 5; c++ ) prm[c] = input(r,c);
+    prm[5] = ni_yes;
+    out(r) = pexwald_scl( prm );
+  }
+
+  if ( !lower_tail ) out = 1.0 - out;
+  if ( ln ) out = log( out );
+
+  return( out );
+}

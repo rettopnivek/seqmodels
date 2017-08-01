@@ -259,6 +259,12 @@ dexwald <- function(t, kappa, xi, tau, sigma = as.numeric( c(1.0)), ln = FALSE, 
     .Call('seqmodels_dexwald', PACKAGE = 'seqmodels', t, kappa, xi, tau, sigma, ln, ni)
 }
 
+#' @rdname rexwald
+#' @export
+pexwald <- function(t, kappa, xi, tau = as.numeric( c(0.0)), sigma = as.numeric( c(1.0)), ln = FALSE, lower_tail = TRUE, ni = FALSE) {
+    .Call('seqmodels_pexwald', PACKAGE = 'seqmodels', t, kappa, xi, tau, sigma, ln, lower_tail, ni)
+}
+
 #' The Frechet Distribution
 #'
 #' Random generation, density, distribution, and quantile functions

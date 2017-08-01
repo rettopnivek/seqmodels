@@ -112,6 +112,24 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// pexwald
+Rcpp::NumericVector pexwald(Rcpp::NumericVector t, Rcpp::NumericVector kappa, Rcpp::NumericVector xi, Rcpp::NumericVector tau, Rcpp::NumericVector sigma, bool ln, bool lower_tail, bool ni);
+RcppExport SEXP seqmodels_pexwald(SEXP tSEXP, SEXP kappaSEXP, SEXP xiSEXP, SEXP tauSEXP, SEXP sigmaSEXP, SEXP lnSEXP, SEXP lower_tailSEXP, SEXP niSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type xi(xiSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type ln(lnSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower_tail(lower_tailSEXP);
+    Rcpp::traits::input_parameter< bool >::type ni(niSEXP);
+    __result = Rcpp::wrap(pexwald(t, kappa, xi, tau, sigma, ln, lower_tail, ni));
+    return __result;
+END_RCPP
+}
 // rfrechet
 Rcpp::NumericVector rfrechet(int N, Rcpp::NumericVector alpha, Rcpp::NumericVector mu);
 RcppExport SEXP seqmodels_rfrechet(SEXP NSEXP, SEXP alphaSEXP, SEXP muSEXP) {

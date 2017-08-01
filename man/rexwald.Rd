@@ -2,6 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{rexwald}
 \alias{dexwald}
+\alias{pexwald}
 \alias{rexwald}
 \title{The ex-Wald distribution}
 \usage{
@@ -9,6 +10,9 @@ rexwald(n, kappa, xi, tau, sigma = as.numeric(c(1)))
 
 dexwald(t, kappa, xi, tau, sigma = as.numeric(c(1)), ln = FALSE,
   ni = FALSE)
+
+pexwald(t, kappa, xi, tau = as.numeric(c(0)), sigma = as.numeric(c(1)),
+  ln = FALSE, lower_tail = TRUE, ni = FALSE)
 }
 \arguments{
 \item{n}{the number of draws for random generation.}

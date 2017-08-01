@@ -1,10 +1,12 @@
 // Include guard to protect against multiple definitions error
-#ifndef __WRFUNCTIONS__
-#define __WRFUNCTIONS__
+#ifndef __EWRFUNCTIONS__
+#define __EWRFUNCTIONS__
 
 #include <Rcpp.h> // Includes certain libraries of functions
 #include "levyfunctions.h" // For drift of 0
 #include "sigfunctions.h" // Wald distribution
+#include "complex_error_function.h"
+#include "ewfunctions.h"
 #include "miscfunctions.h" // Linear interpolation
 #include "gsl/include/gsl_integration.h" // Numerical integration
 #include "gsl/include/gsl_errno.h" // Error handling
@@ -12,32 +14,25 @@
 /*
 Purpose:
 Scalar functions for the random generation, density, distribution,
-and quantile functions of the Wald (or diffusion) race model
-(Logan et al., 2014).
-
-References:
-Logan, G. D., Van Zandt, T., Verbruggen, F., & Wagenmakers, E. J. (2014).
-  On the ability to inhibit thought and action: General and special
-  theories of an act of control. Psychological Review, 121(1), 66-95.
-  doi:10.1037/a0035230.
+and quantile functions of the ex-Wald race model.
 
 Index
-Lookup - 01:  wr_param_verify
-Lookup - 02:  rwaldrace_scl
-Lookup - 03:  dwaldrace_scl
-Lookup - 04:  int_dwaldrace_scl
-Lookup - 05:  pwaldrace_scl
-Lookup - 06:  qwaldrace_scl
+Lookup - 01:  ewr_param_verify
+Lookup - 02:  rexwaldrace_scl
+Lookup - 03:  dexwaldrace_scl
+Lookup - 04:  int_dexwaldrace_scl
+Lookup - 05:  pexwaldrace_scl
+Lookup - 06:  qexwaldrace_scl
 */
 
 // Lookup - 01
 
-inline bool wr_param_verify( std::vector<double> prm,
+inline bool ewr_param_verify( std::vector<double> prm,
                              std::vector<int> index ) {
   /*
   Purpose:
   Function to verify whether inputs are admissable for the
-  Wald race model.
+  ex-Wald race model.
   Arguments:
   prm   - A vector of parameters
   index - The type of parameter being inputted, where...
@@ -63,12 +58,6 @@ inline bool wr_param_verify( std::vector<double> prm,
   int chk = 0;
   // Variable for number of checks that need to be passed
   int n_pass = 0;
-  // Variables for whether response time and choice are present
-  double rt_yes = 0.0;
-  double ch_yes = -1.0;
-  // Variable to track which residual latencies have been
-  // evaluated
-  double first_tau = 0.0;
 
   for ( int i = 0; i < sz; i++ ) {
 
@@ -109,38 +98,10 @@ inline bool wr_param_verify( std::vector<double> prm,
     }
 
     // Check whether residual latency is a real number and
-    // whether it is greater than or equal to 0 and whether
-    // it is less than the inputted response time
+    // whether it is greater than or equal to 0
     if ( index[i] == 5 ) {
-
-      first_tau += 1.0; // Increment count variable
-
-      // Check if it is a real number and greater than 0
       if ( ( !Rcpp::NumericVector::is_na( prm[i] ) ) &&
-           ( prm[i] >= 0.0 ) ) {
-
-        // Check whether residual latency is less than the
-        // given response time
-        if ( ( rt_yes > 0.0 ) && ( ch_yes >= 0.0 ) ) {
-
-          // Skip residual latency for other racer
-          if ( ( ch_yes == 1.0 ) && ( first_tau == 2.0 ) ) chk += 1;
-          if ( ( ch_yes == 0.0 ) && ( first_tau == 1.0 ) ) chk += 1;
-
-          // Check whether residual latency for relevant racer
-          // is less than observed response time
-          if ( ( ch_yes == 1.0 ) && ( first_tau == 1.0 ) ) {
-            if ( rt_yes > prm[i] ) chk += 1;
-          }
-
-          if ( ( ch_yes == 0.0 ) && ( first_tau == 2.0 ) ) {
-            if ( rt_yes > prm[i] ) chk += 1;
-          }
-
-        } else {
-          chk += 1;
-        }
-      }
+           ( prm[i] >= 0.0 ) ) chk += 1;
     }
 
     // Check whether coefficient of drift is a real number and whether
@@ -167,7 +128,7 @@ inline bool wr_param_verify( std::vector<double> prm,
 
 // Lookup - 02
 
-inline std::vector<double> rwaldrace_scl( std::vector<double> prm ) {
+inline std::vector<double> rexwaldrace_scl( std::vector<double> prm ) {
   /*
   Purpose:
   A scalar function to generate random deviates from the Wald race
@@ -182,11 +143,13 @@ inline std::vector<double> rwaldrace_scl( std::vector<double> prm ) {
   prm[5] = Drift rate (0)
   prm[6] = Residual latency (0)
   prm[7] = Coefficient of drift (0)
-  prm[8] = A standard normal deviate (1)
-  prm[9] = A unit uniform deviate (1)
-  prm[10] = A standard normal deviate (0)
-  prm[11] = A unit uniform deviate (0)
-  prm[12] = Indicator for whether residual latency impacts decision
+  prm[8] = A chi-square random deviate with 1 degree of freedom
+  prm[9] = A unit uniform deviate
+  prm[10] = A unit uniform deviate
+  prm[11] = A chi-square random deviate with 1 degree of freedom
+  prm[12] = A unit uniform deviate
+  prm[13] = A unit uniform deviate
+  prm[14] = Indicator for whether residual latency impacts decision
   Returns:
   A random response time and choice.
   */
@@ -210,31 +173,35 @@ inline std::vector<double> rwaldrace_scl( std::vector<double> prm ) {
     prm_sig[2] = 0.0; prm_sig[4] = prm[8]; prm_sig[5] = prm[9];
     // Simulate response time
     double t1 = rinvgauss_scl(prm_sig);
+    // Simulate residual latency
+    double tau_1 = -log( 1.0 - prm[10] ) * prm[2];
 
     // Extract parameters for 2nd racer
     for ( int i = 0; i < 4; i++ ) prm_sig[i] = prm[i+4];
-    prm_sig[2] = 0.0; prm_sig[4] = prm[10]; prm_sig[5] = prm[11];
+    prm_sig[2] = 0.0; prm_sig[4] = prm[11]; prm_sig[5] = prm[12];
     // Simulate response time
     double t0 = rinvgauss_scl(prm_sig);
+    // Simulate residual latency
+    double tau_0 = -log( 1.0 - prm[13] ) * prm[6];
 
     // Extract indicator
-    int rl = prm[12];
+    int rl = prm[14];
 
     // If the residual latency impacts the decision rule
     if ( rl == 1 ) {
-      t1 = t1 + prm[2];
-      t0 = t0 + prm[6];
+      t1 = t1 + tau_1;
+      t0 = t0 + tau_0;
     }
 
     // Determine the winning accumulator
     if (t1 < t0) {
       out[0] = t1;
-      if ( rl == 0 ) out[0] += prm[2];
+      if ( rl == 0 ) out[0] += tau_1;
       out[1] = 1;
     }
     if (t1 > t0) {
       out[0] = t0;
-      if ( rl == 0 ) out[0] += prm[6];
+      if ( rl == 0 ) out[0] += tau_0;
       out[1] = 0;
     }
 
@@ -245,10 +212,10 @@ inline std::vector<double> rwaldrace_scl( std::vector<double> prm ) {
 
 // Lookup - 03
 
-inline double dwaldrace_scl( std::vector<double> prm ) {
+inline double dexwaldrace_scl( std::vector<double> prm ) {
   /*
   Purpose:
-  A scalar function to compute the density for the Wald race model.
+  A scalar function to the density for the ex-Wald race model.
   Arguments:
   prm - A vector of parameters, where...
   prm[0] = response time
@@ -262,8 +229,9 @@ inline double dwaldrace_scl( std::vector<double> prm ) {
   prm[8] = Residual latency (0)
   prm[9] = Coefficient of drift (0)
   prm[10] = Indicator for whether residual latency impacts decision
+  prm[11] = Indicator on whether to use numerical integration
   Returns:
-  The joint log-density for the Wald race model.
+  The joint log-density for the ex-Wald race model.
   */
 
   // Initialize output
@@ -274,15 +242,16 @@ inline double dwaldrace_scl( std::vector<double> prm ) {
   for (int i = 6; i < 10; i++ ) index[i] = i - 3;
 
   // Check for valid inputs
-  if ( wr_param_verify( prm, index ) ) {
+  if ( ewr_param_verify( prm, index ) ) {
 
     // Extract data
     double rt = prm[0]; double ch = prm[1];
     double rl = prm[10];
 
-    std::vector<double> f(6); // PDF for winning racer
-    std::vector<double> F(5); // CDF for losing racer
+    std::vector<double> f(7); // PDF for winning racer
+    std::vector<double> F(6); // CDF for losing racer
     f[0] = rt; F[0] = rt; f[5] = 1.0;
+    f[6] = prm[11]; F[5] = prm[11];
 
     if ( ch == 1.0 ) {
       for ( int i = 0; i < 4; i++ ) {
@@ -304,7 +273,7 @@ inline double dwaldrace_scl( std::vector<double> prm ) {
     }
 
     // Compute log-likelihood
-    out = dinvgauss_scl( f ) + log( 1.0 - pinvgauss_scl( F ) );
+    out = dexwald_scl( f ) + log( 1.0 - pexwald_scl( F ) );
   }
 
   return( out );
@@ -312,7 +281,7 @@ inline double dwaldrace_scl( std::vector<double> prm ) {
 
 // Lookup - 04
 
-inline double int_dwaldrace_scl( double x, void * params) {
+inline double int_dexwaldrace_scl( double x, void * params) {
   /*
   Purpose:
   A scalar function for the Wald race model density that can be
@@ -320,20 +289,21 @@ inline double int_dwaldrace_scl( double x, void * params) {
   Arguments:
   x      - A response time
   *param - A pointer to a vector of parameters, where...
-           param[0] = response time
-           param[1] = choice (0 or 1)
-           param[2] = Threshold (1)
-           param[3] = Drift rate (1)
-           param[4] = Residual latency (1)
-           param[5] = Coefficient of drift (1)
-           param[6] = Threshold (0)
-           param[7] = Drift rate (0)
-           param[8] = Residual latency (0)
-           param[9] = Coefficient of drift (0)
-           param[10] = Indicator for whether residual latency
-                       impacts decision
+   param[0] = response time
+   param[1] = choice (0 or 1)
+   param[2] = Threshold (1)
+   param[3] = Drift rate (1)
+   param[4] = Residual latency (1)
+   param[5] = Coefficient of drift (1)
+   param[6] = Threshold (0)
+   param[7] = Drift rate (0)
+   param[8] = Residual latency (0)
+   param[9] = Coefficient of drift (0)
+   param[10] = Indicator for whether residual latency impacts
+               decision
+   param[10] = Indicator for whether to use numerical integration
   Returns:
-  The joint density for the Wald race model.
+  The joint density for the ex-Wald race model.
   */
 
   // Extract parameters
@@ -345,14 +315,14 @@ inline double int_dwaldrace_scl( double x, void * params) {
   par[0] = x;
 
   // Calculate the density for the Wald race model
-  out = exp( dwaldrace_scl( par ) );
+  out = exp( dexwaldrace_scl( par ) );
 
   return out;
 }
 
 // Lookup - 05
 
-inline double pwaldrace_scl( std::vector<double> par ) {
+inline double pexwaldrace_scl( std::vector<double> par ) {
   /*
   Purpose:
   A scalar function that computes the distribution function
@@ -371,6 +341,7 @@ inline double pwaldrace_scl( std::vector<double> par ) {
   par[9] = Coefficient of drift (0)
   par[10] = Indicator for whether residual latency
             impacts decision
+  par[11] = Indicator for whether to use numerical integration
   Returns:
   The cumulative probability.
   */
@@ -391,7 +362,7 @@ inline double pwaldrace_scl( std::vector<double> par ) {
     double error;
 
     gsl_function F;
-    F.function = &int_dwaldrace_scl;
+    F.function = &int_dexwaldrace_scl;
     F.params = &par;
 
     // If the upper boundary is infinite
@@ -424,11 +395,11 @@ inline double pwaldrace_scl( std::vector<double> par ) {
 
 // Lookup - 06
 
-inline double qwaldrace_scl( std::vector<double> prm ) {
+inline double qexwaldrace_scl( std::vector<double> prm ) {
   /*
   Purpose:
   A scalar function that approximates the quantile function
-  for the Wald race model via linear interpolation.
+  for the ex-Wald race model via linear interpolation.
   Arguments:
   prm[0] = A probability
   prm[1] = Choice (0 or 1)
@@ -442,11 +413,13 @@ inline double qwaldrace_scl( std::vector<double> prm ) {
   prm[9] = Coefficient of drift (0)
   prm[10] = Indicator for whether residual latency
             impacts decision
-  prm[11] = The upper boundary of the quantiles to
+  prm[11] = Indicator for whether to use numerical
+            integration
+  prm[12] = The upper boundary of the quantiles to
             explore
-  prm[12] = The number of iterations to attempt
+  prm[13] = The number of iterations to attempt
             during the search
-  prm[13] = The precision of the estimate of the
+  prm[14] = The precision of the estimate of the
             inverse CDF
   Returns:
   An estimated quantile.
@@ -461,22 +434,22 @@ inline double qwaldrace_scl( std::vector<double> prm ) {
   index[0] = 7; // Set to probability
 
   // Check for valid inputs
-  if ( wr_param_verify( prm, index ) ) {
+  if ( ewr_param_verify( prm, index ) ) {
 
     // Rescale probabilities for joint distribution
     double p = prm[0];
     prm[0] = R_PosInf;
-    double denom = pwaldrace_scl( prm );
+    double denom = pexwaldrace_scl( prm );
     prm[0] = p * denom;
     out = prm[ 0 ];
 
-    cdf cur_cdf = pwaldrace_scl;
+    cdf cur_cdf = pexwaldrace_scl;
 
     // Extract values governing linear interpolation
     double mn = 0.0;
-    double mx = prm[11];
-    int em_stop = prm[12];
-    double err = prm[13];
+    double mx = prm[12];
+    int em_stop = prm[13];
+    double err = prm[14];
 
     // std::vector<double> prm_int(11);
     // for ( int j = 0; j < 11; j++ ) prm_int[j] = prm[j];
@@ -489,4 +462,3 @@ inline double qwaldrace_scl( std::vector<double> prm ) {
 }
 
 #endif // End include guard
-
