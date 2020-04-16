@@ -18,6 +18,13 @@ install.packages("devtools")
 library(devtools)
 ```
 
+Next, just in case, you should set an environment variable 
+to prevent installation from halting due to warning 
+messages:
+```
+Sys.setenv( R_REMOTES_NO_ERRORS_FROM_WARNINGS = "true" )
+```
+
 The 'seqmodels' package can then be installed via the following command:  
 ```
 install_github("rettopnivek/seqmodels")
