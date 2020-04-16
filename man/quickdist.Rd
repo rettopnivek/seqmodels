@@ -38,4 +38,3 @@ over a variety of distributions.
 # Forthcoming
 
 }
-

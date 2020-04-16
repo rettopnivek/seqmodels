@@ -1,16 +1,19 @@
 Package: seqmodels
-Title: Distribution functions for sequential sampling models
+Title: Distribution Functions for Sequential Sampling Models
 Version: 0.0.0.9000
-Authors@R: person("Kevin", "Potter", email = "kevin.w.potter@gmail.com", role = c("aut", "cre"))
-Description: Distribution, density, quantile, and random number generation functions for a collection of sequential sampling models.
+Authors@R: person( "Kevin", "Potter", 
+  email = "kevin.w.potter@gmail.com", role = c("aut", "cre") )
+Description: Distribution, density, quantile, and 
+  random number generation functions for a collection 
+  of sequential sampling models.
 Depends:
-    R (>= 3.0),
-    RcppParallel
+  R (>= 3.0),
+  RcppParallel
 License: MIT + License
 LazyData: true
 LinkingTo: Rcpp, RcppParallel
 Imports:
-    Rcpp,
-    RcppParallel
+  Rcpp,
+  RcppParallel
 SystemRequirements: GNU make
-RoxygenNote: 5.0.1
+RoxygenNote: 7.0.2

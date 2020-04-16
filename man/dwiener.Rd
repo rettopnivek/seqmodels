@@ -7,18 +7,64 @@
 \alias{rwiener}
 \title{Two-boundary Wiener Process for Choice and Response Times}
 \usage{
-dwiener(rt, ch, alpha, theta, xi, tau, sigma = as.numeric(c(1)), ln = FALSE,
-  joint = TRUE, eps = 1e-29, parYes = TRUE)
+dwiener(
+  rt,
+  ch,
+  alpha,
+  theta,
+  xi,
+  tau,
+  sigma = as.numeric(c(1)),
+  ln = FALSE,
+  joint = TRUE,
+  eps = 1e-29,
+  parYes = TRUE
+)
 
-pwiener(rt, ch, alpha, theta, xi, tau, sigma = as.numeric(c(1)), ln = FALSE,
-  joint = TRUE, lower_tail = TRUE, eps = 1e-29, parYes = TRUE)
+pwiener(
+  rt,
+  ch,
+  alpha,
+  theta,
+  xi,
+  tau,
+  sigma = as.numeric(c(1)),
+  ln = FALSE,
+  joint = TRUE,
+  lower_tail = TRUE,
+  eps = 1e-29,
+  parYes = TRUE
+)
 
-qwiener(p, ch, alpha, theta, xi, tau, sigma = as.numeric(c(1)),
-  joint = FALSE, eps = 1e-29, bounds = 3, em_stop = 20, err = 1e-08,
-  parYes = TRUE)
+qwiener(
+  p,
+  ch,
+  alpha,
+  theta,
+  xi,
+  tau,
+  sigma = as.numeric(c(1)),
+  joint = FALSE,
+  eps = 1e-29,
+  bounds = 3,
+  em_stop = 20,
+  err = 1e-08,
+  parYes = TRUE
+)
 
-rwiener(n, alpha, theta, xi, tau, sigma = as.numeric(c(1)), eps = 1e-29,
-  bounds = 5, em_stop = 30, err = 1e-16, parYes = TRUE)
+rwiener(
+  n,
+  alpha,
+  theta,
+  xi,
+  tau,
+  sigma = as.numeric(c(1)),
+  eps = 1e-29,
+  bounds = 5,
+  em_stop = 30,
+  err = 1e-16,
+  parYes = TRUE
+)
 }
 \arguments{
 \item{rt}{a vector of responses times ( \code{rt} > 0 ).}
@@ -127,6 +173,7 @@ Navarro, D. J., & Fuss, I. G. (2009). Fast and accurate calculations
 Ratcliff, R. (1978). A theory of memory retrieval. Psychological
   review, 85, 59 - 108.
 }
+
 \examples{
 # Density
 dwiener( rt = 0.6, ch = c( 1, 0 ), alpha = 1.6, theta = 0.5,
@@ -167,4 +214,3 @@ obj = quickdist( 'wp', 'HF', prm )
 plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
 
 }
-

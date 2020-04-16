@@ -21,4 +21,3 @@ Forthcoming
 \description{
 Draw a Line Based on a 'seqmodels' Object
 }
-

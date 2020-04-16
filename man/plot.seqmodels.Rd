@@ -19,4 +19,3 @@ Forthcoming
 \description{
 Generate a Blank Plot for a 'seqmodels' Object
 }
-

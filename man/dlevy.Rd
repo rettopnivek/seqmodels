@@ -66,6 +66,7 @@ Applebaum, D. (2010). Lectures on Levy processes and stochastic
 Siegrist, K. (1997). The Levy distribution. Retrieved from
   http://www.math.uah.edu/stat/special/Levy.html
 }
+
 \examples{
 # Density
 dlevy( x = 2.199, mu = 0.0, sigma = 1.0 )
@@ -78,4 +79,3 @@ qlevy( p = .5, mu = 0.0, sigma = 1.0 )
 sim = rlevy( n = 1000, mu = 0.0, sigma = 1.0 )
 
 }
-

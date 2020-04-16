@@ -21,4 +21,3 @@ Forthcoming
 \description{
 Add a Set of Points Based on a 'seqmodels' Object
 }
-
