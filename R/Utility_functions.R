@@ -362,24 +362,26 @@ dist_determine = function( dist ) {
   available_dist[,1] = c(
     'Ex-Gaussian',
     'Shifted inverse Gaussian',
-    'Wald race',
+    # 'Wald race',
     'Two-boundary wiener',
     'Normal',
     'Gamma',
     'Weibull',
     'Log-normal',
-    'Beta'
+    'Beta',
+    'Exponential'
   )
   available_dist[,2] = c(
     'emg',
     'sig',
-    'wr',
+    # 'wr',
     'wp',
     'n',
     'ga',
     'we',
     'ln',
-    'b'
+    'b',
+    'exp'
   )
 
   # Ex-Gaussian
@@ -401,12 +403,12 @@ dist_determine = function( dist ) {
   }
 
   # Wald race
-  common_names = c( 'wr', 'WR', 'dwaldrace', 'pwaldrace',
-                    'qwaldrace', 'rwaldrace', 'wald race',
-                    'Wald race', 'waldrace' )
-  if ( dist %in% common_names ) {
-    out = 'wr'
-  }
+  #common_names = c( 'wr', 'WR', 'dwaldrace', 'pwaldrace',
+  #                  'qwaldrace', 'rwaldrace', 'wald race',
+  #                  'Wald race', 'waldrace' )
+  #if ( dist %in% common_names ) {
+  #  out = 'wr'
+  #}
 
   # Two boundary wiener
   common_names = c( 'wp', 'WP', 'dwiener', 'pwiener',
@@ -449,11 +451,16 @@ dist_determine = function( dist ) {
   }
 
   # Beta
-  common_names = c( 'n', 'N', 'dnorm', 'pnorm',
-                    'qnorm', 'rnorm', 'Normal',
-                    'normal', 'norm', 'Norm' )
+  common_names = c( 'b', 'B', 'dbeta', 'pbeta',
+                    'qbeta', 'rbeta', 'Beta' )
   if ( dist %in% common_names ) {
-    out = 'n'
+    out = 'b'
+  }
+
+  common_names = c( 'exp', 'Exp', 'dexp', 'pexp',
+                    'qexp', 'rexp', 'Exponential' )
+  if ( dist %in% common_names ) {
+    out = 'exp'
   }
 
   if ( is.null( out ) ) {

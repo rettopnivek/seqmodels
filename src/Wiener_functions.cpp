@@ -57,7 +57,6 @@ Lookup - 08:  rwiener
 
 ### TO DO ###
 Add moments function
-Update .rd page (add plotting examples)
 */
 
 //' @useDynLib seqmodels
@@ -193,32 +192,37 @@ struct dwienerWorker : public RcppParallel::Worker
 //' pwiener( rt = Inf, ch = c( 1, 0 ), alpha = 1.6, theta = 0.5,
 //'   xi = 1.0, tau = 0.3 )
 //' # Quantile function (Accurate to ~4 decimal places)
-//' round( qwiener( p = .3499, ch = c( 1, 0 ), alpha = 1.6, theta = 0.5,
+//' round( qwiener( p = .3499, ch = 1, alpha = 1.6, theta = 0.5,
 //'   xi = 1.0, tau = 0.3 ), 4 )
-//'
+//' # For quantiles based on joint distribution, re-weight input 'p'
+//' # based on choice probabilities
+//' prob <- pwiener( rt = Inf, ch = c( 1, 0 ), alpha = 1.6, theta = 0.5,
+//'   xi = 1.0, tau = 0.3 )
+//' round( qwiener( p = .3499 * prob, ch = c( 1, 0), alpha = 1.6,
+//'   theta = 0.5, xi = 1.0, tau = 0.3 ), 4 )
 //' # Simulate values
-//' sim = rwiener( n = 100, alpha = 0.8, theta = 0.6,
+//' sim <- rwiener( n = 100, alpha = 0.8, theta = 0.6,
 //'   xi = 0.0, tau = 0.3 )
 //'
 //' # Plotting
 //' layout( matrix( 1:4, 2, 2, byrow = T ) )
 //' # Parameters
-//' prm = c( a = 1.2, z = .4, v = 1.0, t0 = 0.3 )
+//' prm <- c( a = 1.2, z = .4, v = 1.0, t0 = 0.3 )
 //' # Density
-//' obj = quickdist( 'wp', 'PDF', prm )
+//' obj <- quickdist( 'wp', 'PDF', prm )
 //' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
 //' # CDF
-//' obj = quickdist( 'wp', 'CDF', prm )
+//' obj <- quickdist( 'wp', 'CDF', prm )
 //' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
 //' # Quantiles
-//' obj = quickdist( 'wp', 'QF', prm, x = seq( .2, .8, .2 ) )
+//' obj <- quickdist( 'wp', 'QF', prm, x = seq( .2, .8, .2 ) )
 //' plot( obj ); prb = seq( .2, .8, .2 )
 //' abline( h = prb, lty = 2 )
 //' # Conditional, not joint
 //' lines( obj, type = 'b', pch = 19, weight = 1 )
 //' lines( obj, ch = 0, type = 'b', pch = 17, lty = 2, weight = 1 )
 //' # Hazard function
-//' obj = quickdist( 'wp', 'HF', prm )
+//' obj <- quickdist( 'wp', 'HF', prm )
 //' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
 //'
 //' @export

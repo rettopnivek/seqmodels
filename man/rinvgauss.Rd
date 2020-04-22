@@ -142,49 +142,49 @@ round( qinvgauss( p = .5, kappa = 1.0, xi = 1.0, tau = 0.3 ), 4 )
 minvgauss( kappa = 1.0, xi = 1.0, tau = 0.3 )
 
 # Simulation (No shift)
-sim = rinvgauss( 1000, kappa = 0.8, xi = 2.0 )
+sim <- rinvgauss( 1000, kappa = 0.8, xi = 2.0 )
 
 # Function to obtain maximum likelihood estimates
-param_est = function( dat, tau_hat = 0 ) {
+param_est <- function( dat, tau_hat = 0 ) {
   # Estimate threshold and drift from first two moments of
   # data (Heathcote, 2004):
-  dat = dat - tau_hat # Apply shift
-  xi_hat = sqrt( mean( dat )/var( dat ) );
-  kappa_hat = xi_hat * mean( dat )
+  dat <- dat - tau_hat # Apply shift
+  xi_hat <- sqrt( mean( dat )/var( dat ) );
+  kappa_hat <- xi_hat * mean( dat );
   return( c( kappa = kappa_hat, xi = xi_hat, tau = tau_hat ) )
 }
 print( param_est( sim ) )
 
 # Non-zero shift parameter
-sim = rinvgauss( 1000, kappa = 1.6, xi = 1.5, tau = .3 )
+sim <- rinvgauss( 1000, kappa = 1.6, xi = 1.5, tau = .3 )
 
 # Estimating shift parameter
 
 # Function to compute sum of log-likelihoods
-f = function( tau_hat, dat ) {
+f <- function( tau_hat, dat ) {
   prm = param_est( dat, tau_hat = tau_hat )
   sll = sum( dinvgauss( dat, prm[1], prm[2], tau = prm[3], ln = T ) )
   return( sll )
 }
-tau_hat = optimize( f, c( 0.0, min( sim ) ), dat = sim, maximum = T )
+tau_hat <- optimize( f, c( 0.0, min( sim ) ), dat = sim, maximum = T )
 print( param_est( sim, tau_hat = tau_hat$maximum ) )
 
 # Plotting
 layout( matrix( 1:4, 2, 2, byrow = T ) )
 # Parameters
-prm = c( k = 0.8, x = 1.6, t = 0.3, s = 1.0 )
+prm <- c( k = 0.8, x = 1.6, t = 0.3, s = 1.0 )
 # Density
-obj = quickdist( 'sig', 'PDF', prm )
+obj <- quickdist( 'sig', 'PDF', prm )
 plot( obj ); lines( obj )
 # CDF
-obj = quickdist( 'sig', 'CDF', prm )
+obj <- quickdist( 'sig', 'CDF', prm )
 plot( obj ); lines( obj )
 # Quantiles
-obj = quickdist( 'sig', 'QF', prm, x = seq( .2, .8, .2 ) )
+obj <- quickdist( 'sig', 'QF', prm, x = seq( .2, .8, .2 ) )
 plot( obj ); prb = seq( .2, .8, .2 )
 abline( h = prb, lty = 2 ); lines( obj, type = 'b', pch = 19 )
 # Hazard function
-obj = quickdist( 'sig', 'HF', prm )
+obj <- quickdist( 'sig', 'HF', prm )
 plot( obj ); lines( obj )
 
 }

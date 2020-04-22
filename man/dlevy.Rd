@@ -76,6 +76,6 @@ plevy( q = 2.199, mu = 0.0, sigma = 1.0 )
 qlevy( p = .5, mu = 0.0, sigma = 1.0 )
 
 # Simulations
-sim = rlevy( n = 1000, mu = 0.0, sigma = 1.0 )
+sim <- rlevy( n = 1000, mu = 0.0, sigma = 1.0 )
 
 }

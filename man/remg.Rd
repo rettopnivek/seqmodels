@@ -119,30 +119,30 @@ round( qemg( p = .5, mu = 0.0, sigma = 1.0, lambda = 1.0 ), 4 )
 memg( mu = 0.44, sigma = 0.07, lambda = 2.0 )
 
 # Simulation
-sim = remg( n = 1000, mu = 0.44, sigma = 0.07, lambda = 2.0 );
+sim <- remg( n = 1000, mu = 0.44, sigma = 0.07, lambda = 2.0 );
 
 # Function to obtain maximum likelihood estimates
-param_est = function( dat ) {
+param_est <- function( dat ) {
   # Compute 1st, 2nd, and 3rd moments ( Terriberry, 2007).
-  n = 0; m = 0; m2 = 0; m3 = 0;
+  n <- 0; m <- 0; m2 <- 0; m3 <- 0;
   for ( k in 1:length( dat ) ) {
-    n1 = n; n = n + 1
-    term1 = dat[k] - m; term2 = term1/ n; term3 = term1 * term2 * n1
+    n1 <- n; n <- n + 1
+    term1 <- dat[k] - m; term2 = term1/ n; term3 = term1 * term2 * n1
     # Update first moment
-    m = m + term2
+    m <- m + term2
     # Update third moment
-    m3 = m3 + term3 + term2 * (n - 2) - 3 * term2 * m2
+    m3 <- m3 + term3 + term2 * (n - 2) - 3 * term2 * m2
     # Update second moment
-    m2 = m2 + term3
+    m2 <- m2 + term3
   }
   # Compute standard deviation of sample
-  s = sqrt( m2 / ( n - 1.0 ) )
+  s <- sqrt( m2 / ( n - 1.0 ) )
   # Compute skewness of sample
-  y = sqrt( n ) * m3 / ( m2^1.5 );
+  y <- sqrt( n ) * m3 / ( m2^1.5 );
   # Estimate parameters
-  mu_hat = m - s * ( y/2 )^(1/3)
-  sigma_hat = sqrt( (s^2) * ( 1 - (y/2)^(2/3) ) )
-  lambda_hat = 1/( s * (y/2)^(1/3) )
+  mu_hat <- m - s * ( y/2 )^(1/3)
+  sigma_hat <- sqrt( (s^2) * ( 1 - (y/2)^(2/3) ) )
+  lambda_hat <- 1/( s * (y/2)^(1/3) )
   return( c( mu = mu_hat, sigma = sigma_hat, lambda = lambda_hat ) )
 }
 
@@ -151,20 +151,20 @@ print( param_est( sim ) )
 # Plotting
 layout( matrix( 1:4, 2, 2, byrow = T ) )
 # Parameters
-prm = c( m = .44, s = .07, l = 2.0 )
+prm <- c( m = .44, s = .07, l = 2.0 )
 # Density
-obj = quickdist( 'emg', 'PDF', prm )
+obj <- quickdist( 'emg', 'PDF', prm )
 plot( obj ); lines( obj )
 # CDF
-obj = quickdist( 'emg', 'CDF', prm )
+obj <- quickdist( 'emg', 'CDF', prm )
 plot( obj ); lines( obj )
 # Quantiles
-obj = quickdist( 'emg', 'QF', prm, x = seq( .2, .8, .2 ) )
+obj <- quickdist( 'emg', 'QF', prm, x = seq( .2, .8, .2 ) )
 plot( obj ); prb = seq( .2, .8, .2 );
 abline( h = prb, lty = 2 );
 lines( obj, type = 'b', pch = 19 )
 # Hazard function
-obj = quickdist( 'emg', 'HF', prm )
+obj <- quickdist( 'emg', 'HF', prm )
 plot( obj ); lines( obj )
 
 }

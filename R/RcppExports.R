@@ -80,30 +80,30 @@
 #' memg( mu = 0.44, sigma = 0.07, lambda = 2.0 )
 #'
 #' # Simulation
-#' sim = remg( n = 1000, mu = 0.44, sigma = 0.07, lambda = 2.0 );
+#' sim <- remg( n = 1000, mu = 0.44, sigma = 0.07, lambda = 2.0 );
 #'
 #' # Function to obtain maximum likelihood estimates
-#' param_est = function( dat ) {
+#' param_est <- function( dat ) {
 #'   # Compute 1st, 2nd, and 3rd moments ( Terriberry, 2007).
-#'   n = 0; m = 0; m2 = 0; m3 = 0;
+#'   n <- 0; m <- 0; m2 <- 0; m3 <- 0;
 #'   for ( k in 1:length( dat ) ) {
-#'     n1 = n; n = n + 1
-#'     term1 = dat[k] - m; term2 = term1/ n; term3 = term1 * term2 * n1
+#'     n1 <- n; n <- n + 1
+#'     term1 <- dat[k] - m; term2 = term1/ n; term3 = term1 * term2 * n1
 #'     # Update first moment
-#'     m = m + term2
+#'     m <- m + term2
 #'     # Update third moment
-#'     m3 = m3 + term3 + term2 * (n - 2) - 3 * term2 * m2
+#'     m3 <- m3 + term3 + term2 * (n - 2) - 3 * term2 * m2
 #'     # Update second moment
-#'     m2 = m2 + term3
+#'     m2 <- m2 + term3
 #'   }
 #'   # Compute standard deviation of sample
-#'   s = sqrt( m2 / ( n - 1.0 ) )
+#'   s <- sqrt( m2 / ( n - 1.0 ) )
 #'   # Compute skewness of sample
-#'   y = sqrt( n ) * m3 / ( m2^1.5 );
+#'   y <- sqrt( n ) * m3 / ( m2^1.5 );
 #'   # Estimate parameters
-#'   mu_hat = m - s * ( y/2 )^(1/3)
-#'   sigma_hat = sqrt( (s^2) * ( 1 - (y/2)^(2/3) ) )
-#'   lambda_hat = 1/( s * (y/2)^(1/3) )
+#'   mu_hat <- m - s * ( y/2 )^(1/3)
+#'   sigma_hat <- sqrt( (s^2) * ( 1 - (y/2)^(2/3) ) )
+#'   lambda_hat <- 1/( s * (y/2)^(1/3) )
 #'   return( c( mu = mu_hat, sigma = sigma_hat, lambda = lambda_hat ) )
 #' }
 #'
@@ -112,20 +112,20 @@
 #' # Plotting
 #' layout( matrix( 1:4, 2, 2, byrow = T ) )
 #' # Parameters
-#' prm = c( m = .44, s = .07, l = 2.0 )
+#' prm <- c( m = .44, s = .07, l = 2.0 )
 #' # Density
-#' obj = quickdist( 'emg', 'PDF', prm )
+#' obj <- quickdist( 'emg', 'PDF', prm )
 #' plot( obj ); lines( obj )
 #' # CDF
-#' obj = quickdist( 'emg', 'CDF', prm )
+#' obj <- quickdist( 'emg', 'CDF', prm )
 #' plot( obj ); lines( obj )
 #' # Quantiles
-#' obj = quickdist( 'emg', 'QF', prm, x = seq( .2, .8, .2 ) )
+#' obj <- quickdist( 'emg', 'QF', prm, x = seq( .2, .8, .2 ) )
 #' plot( obj ); prb = seq( .2, .8, .2 );
 #' abline( h = prb, lty = 2 );
 #' lines( obj, type = 'b', pch = 19 )
 #' # Hazard function
-#' obj = quickdist( 'emg', 'HF', prm )
+#' obj <- quickdist( 'emg', 'HF', prm )
 #' plot( obj ); lines( obj )
 #'
 #' @export
@@ -155,318 +155,6 @@ qemg <- function(p, mu, sigma, lambda, bounds = as.numeric( c( 0.0, 3.0)), em_st
 #' @export
 memg <- function(mu, sigma, lambda) {
     .Call('_seqmodels_memg', PACKAGE = 'seqmodels', mu, sigma, lambda)
-}
-
-#' The ex-Wald distribution
-#'
-#' Random generation, density, distribution, and quantile functions
-#' for the convolution of the exponential and Wald distributions,
-#' parameterized for Brownian motion. \code{kappa} refers to the
-#' threshold, \code{xi} refers to the rate of evidence accumulation
-#' towards this threshold, \code{tau} is the mean for the
-#' exponentially distribution shift values, and \code{sigma} is
-#' the  within-trial variability for the rate of evidence
-#' accumulation (the coefficient of drift, typically fit to 1 for
-#' identification purposes).
-#'
-#' @param n the number of draws for random generation.
-#' @param t a vector of times ( t > 0 ).
-#' @param kappa a vector of thresholds determining when a decision
-#'   terminates (kappa > 0).
-#' @param xi a vector of drift rates, or rates of evidence accumulation
-#'   (xi \eqn{\ge} 0).
-#' @param tau a vector of inverse rate parameters (the mean of the
-#'   exponentially distributed residual latency; tau > 0).
-#' @param sigma a vector of the within-trial variabilities (the
-#'   coefficient of drift; sigma > 0).
-#' @param ln logical; if \code{TRUE}, probabilities are given as
-#'   log(p).
-#' @param lower_tail logical; if \code{TRUE} (default), probabilities
-#'   are \eqn{P(X \le x)} otherwise \eqn{P( X > x)}.
-#' @param bounds upper limit of the quantiles to explore  for the
-#'   approximation via linear interpolation.
-#' @param em_stop the maximum number of iterations to attempt to
-#'   find the quantile via linear interpolation.
-#' @param err the number of decimals places to approximate the
-#'   cumulative probability during estimation of the quantile function.
-#'
-#' @section Details:
-#' The ex-Wald distribution is the result if one sums two random
-#' variables, one distributed according to the inverse Gaussian
-#' distribution and the other distributed according to an
-#' exponential distribution with rate equal to 1/tau.
-#'
-#' The density is therefore computed from the convolution of the
-#' Wald and exponential distributions. Schwarz (2002) provides a
-#' solution for this convolution. If \eqn{\xi^2} is greater than
-#' \eqn{2 \sigma^2 / \tau }, a straightforward analytic solution
-#' exists (Equation 18). Otherwise, the density is the real
-#' part of a complex function. Schwarz provides a solution in
-#' this case using the complex error function (Equation 9 and 22).
-#' To compute the real and imaginary parts of the complex error
-#' function, the density function uses an algorithm from the
-#' Faddeeva package (Johnson, 2012), with an additional wrapper
-#' taken from the S-PLUS script of Heathcote (2004b).
-#'
-#' A linear interpolation approach is used to approximate the
-#' quantile function, estimating the inverse of the cumulative
-#' distribution function via an iterative procedure. When
-#' the precision of this estimate is set to 8 decimal places,
-#' the approximation will be typically accurate to about half of a
-#' millisecond.
-#'
-#' @return
-#' \code{dexwald} gives the density, \code{pexwald} gives the
-#' distribution function, \code{qexwald} approximates the quantile
-#' function, and \code{rexwald} generates random deviates.
-#'
-#' The length of the result is determined by \code{n} for
-#' \code{rexwald}, and is the maximum of the length of the
-#' numerical arguments for the other functions.
-#'
-#' The numerical arguments other than \code{n} are recycled to the
-#' length of the result.
-#'
-#' @section References:
-#'
-#' Heathcote, A. (2004a). Fitting Wald and ex-Wald distributions to
-#'   response time data: An example using functions for the S-PLUS
-#'   package. Behavior Research Methods Instruments & Computers, 36,
-#'   678 - 694.
-#'
-#' Heathcote, A. (2004b). rtfit.ssc. Retrieved May 5, 2017 from
-#'   Psychonomic Society Web Archive: http://www.psychonomic.org/ARCHIVE/.
-#'
-#' Johnson, S. G. (2012). Faddeeva Package [Computer software].
-#'   Retrieved from
-#'   http://ab-initio.mit.edu/wiki/index.php/Faddeeva_Package#License
-#'
-#' Schwarz, W. (2002). On the convolution of the inverse Gaussian and
-#'   the exponential random variables. Communications in Statistics,
-#'   Theory and Methods, 31, 2113 - 2121.
-#'
-#' @examples
-#' Forthcoming
-#'
-#' @export
-rexwald <- function(n, kappa, xi, tau, sigma = as.numeric( c(1.0))) {
-    .Call('_seqmodels_rexwald', PACKAGE = 'seqmodels', n, kappa, xi, tau, sigma)
-}
-
-#' @rdname rexwald
-#' @export
-dexwald <- function(t, kappa, xi, tau, sigma = as.numeric( c(1.0)), ln = FALSE, ni = FALSE) {
-    .Call('_seqmodels_dexwald', PACKAGE = 'seqmodels', t, kappa, xi, tau, sigma, ln, ni)
-}
-
-#' @rdname rexwald
-#' @export
-pexwald <- function(t, kappa, xi, tau = as.numeric( c(0.0)), sigma = as.numeric( c(1.0)), ln = FALSE, lower_tail = TRUE, ni = FALSE) {
-    .Call('_seqmodels_pexwald', PACKAGE = 'seqmodels', t, kappa, xi, tau, sigma, ln, lower_tail, ni)
-}
-
-#' The Frechet Distribution
-#'
-#' Random generation, density, distribution, and quantile functions
-#' for the Frechet (inverse Weibull) distribution with a shape and
-#' scale parameter.
-#'
-#' @param N the number of draws for random generation.
-#' @param t a vector of quantiles (typically response times).
-#' @param alpha a vector of shape parameters (alpha > 0).
-#' @param mu a vector of scale parameters (mu > 0).
-#' @param ln indicates whether the log-likelihood should be returned,
-#'   where 1 = True, 0 = False.
-#'
-#' @section Details:
-#' The Frechet distribution is a special case of the generalized extreme
-#' value distribution, the distribution of the maxima of a sequence of
-#' i.i.d. random variables with no lower boundary. The current
-#' parameterization is intended for applications for a variant of the
-#' LBA model (Terry et al., 2015).
-#'
-#' For unequal vector lengths, values are recycled.
-#'
-#' @section References:
-#' Terry, A., Marley, A. A. J., Barnwal, E.-J., Wagenmakers, Heathcote,
-#'   A., & Brown, S. D. (2015). Generalising the drift rate distribution
-#'   for linear ballistic accumulators. Journal of Mathematical
-#'   Psychology, 68, 49 - 58.
-#'
-#' @examples
-#' # Treatment of illegal values and vectorization
-#' set.seed(100)
-#' rfrechet( 8, c(1,2,-1,1), c(1,.5,1,-1) ) # Returns NA
-#' dfrechet( c(.5, -1), c(1,2,-1,1), c(1,.5,1,-1) ) # Returns 0
-#' pfrechet( c(.5, -1), c(1,2,-1,1),c(1,.4,1,-1) ) # Returns 0
-#'
-#' # Distribution function
-#' t = seq(0,2,length=1000)
-#' plot( t, pfrechet(t,3,.5), type = 'l', xlab = 'Time', ylab =
-#'   'Distribution', bty = 'l', yaxt = 'n' )
-#' axis(2,seq(0,1,.5))
-#' # Quantile function
-#' prb = seq( .1, .9, .2 ) # Probabilities
-#' qnt = qfrechet( prb, 3, .5 )
-#' segments( rep(0,length(prb)), prb, qnt, prb )
-#' segments( qnt,rep(0,length(prb)), qnt, prb )
-#'
-#' @export
-rfrechet <- function(N, alpha, mu) {
-    .Call('_seqmodels_rfrechet', PACKAGE = 'seqmodels', N, alpha, mu)
-}
-
-#' @rdname rfrechet
-#' @export
-dfrechet <- function(t, alpha, mu, ln = 0L) {
-    .Call('_seqmodels_dfrechet', PACKAGE = 'seqmodels', t, alpha, mu, ln)
-}
-
-#' @rdname rfrechet
-#' @export
-pfrechet <- function(t, alpha, mu) {
-    .Call('_seqmodels_pfrechet', PACKAGE = 'seqmodels', t, alpha, mu)
-}
-
-#' @rdname rfrechet
-#' @export
-qfrechet <- function(p, alpha, mu) {
-    .Call('_seqmodels_qfrechet', PACKAGE = 'seqmodels', p, alpha, mu)
-}
-
-#' A Linear Ballistic Accumulator
-#'
-#' Random generation, density, and distribution functions
-#' for a single linear ballistic accumulator (Brown & Heathcote,
-#' 2008; Terry et al., 2015).
-#'
-#' @param N the number of draws for random generation.
-#' @param t a vector of quantiles (typically response times).
-#' @param A the upper boundary for the uniformly distributed start
-#'   points (A >= 0).
-#' @param b the threshold for the accumulator (b >= A).
-#' @param alpha a location/shape parameter for the distribution
-#'   of drift rates.
-#' @param beta a scale parameter for the distribution of drift
-#'   rates.
-#' @param ln indicates whether the log-likelihood should be returned,
-#'   where 1 = True, 0 = False (the default).
-#' @param ver indicates which variant of drift rate distribution
-#'   for the LBA should be used.
-#'
-#' @note For a standard LBA with normally distributed drifts,
-#' the distribution is truncated so that drift rates will only be
-#' positive.
-#'
-#' @section References:
-#' Brown, S. D., & Heathcote, A. (2008). The simplest complete model of
-#'   choice response time: Linear ballistic accumulation. Cognitive
-#'   psychology, 57(3), 153-178.
-#' Terry, A., Marley, A. A. J., Barnwal, E.-J., Wagenmakers, Heathcote,
-#'   A., & Brown, S. D. (2015). Generalising the drift rate distribution
-#'   for linear ballistic accumulators. Journal of Mathematical
-#'   Psychology, 68, 49 - 58.
-#' Singman, H., Brown, S., Gretton, M., Heathcote, A., Voss, A.,
-#'   Voss, J., & Terry, A. (2016). rtdists: Response Time
-#'   Distributions.  R package version 0.6-6.
-#'
-#' @examples
-#' # Forthcoming
-#'
-#' @export
-rlba_1acc <- function(N, A, b, alpha, beta, ver = 0L) {
-    .Call('_seqmodels_rlba_1acc', PACKAGE = 'seqmodels', N, A, b, alpha, beta, ver)
-}
-
-#' @rdname rlba_1acc
-#' @export
-plba_1acc <- function(t, A, b, alpha, beta, ver = 0L) {
-    .Call('_seqmodels_plba_1acc', PACKAGE = 'seqmodels', t, A, b, alpha, beta, ver)
-}
-
-#' @rdname rlba_1acc
-#' @export
-dlba_1acc <- function(t, A, b, alpha, beta, ver = 0L, ln = 0L) {
-    .Call('_seqmodels_dlba_1acc', PACKAGE = 'seqmodels', t, A, b, alpha, beta, ver, ln)
-}
-
-#' @rdname rlba_1acc
-#' @export
-qlba_1acc <- function(p, A, b, alpha, beta, ver = 0L, mxT = 10.0, em_stop = 20L, err = .0001) {
-    .Call('_seqmodels_qlba_1acc', PACKAGE = 'seqmodels', p, A, b, alpha, beta, ver, mxT, em_stop, err)
-}
-
-#' The LBA Model
-#'
-#' Random generation, density, distribution, and quantile functions
-#' for a two accumulator version of the LBA model (Brown & Heathcote,
-#' 2008; Terry et al., 2015).
-#'
-#' @param N the number of observations to simulate.
-#' @param rt a vector of response times (rt > 0).
-#' @param ch a vector of choices (ch = {0,1}).
-#' @param A1 the upper boundary for the uniformly distributed start
-#'   points (A1 >= 0) for choices == 1.
-#' @param b1 the threshold (b1 >= A1) for choices == 1.
-#' @param alpha1 a location/shape parameter for the distribution
-#'   of drift rates for choices == 1.
-#' @param beta1 a scale parameter for the distribution of drift
-#'   rates for choices == 1.
-#' @param A0 the upper boundary for the uniformly distributed start
-#'   points (A0 >= 0) for choices == 0.
-#' @param b0 the threshold (b0 >= A0) for choices == 0.
-#' @param alpha0 a location/shape parameter for the distribution
-#'   of drift rates for choices == 0.
-#' @param beta0 a scale parameter for the distribution of drift
-#'   rates for choices == 0.
-#' @param ln indicates whether the log-likelihood should be returned,
-#'   where 1 = True, 0 = False (the default).
-#' @param ver indicates which variant of drift rate distribution
-#'   for the LBA should be used.
-#' @param rl if 1, the residual latency impacts the decision rule.
-#' @param mxRT the maximum RT response time value that the algorithm is applied to.
-#' @param em_step the maximum number of iterations for the linear interpolation.
-#' @param err the desired degree of precision for the linear interpolation.
-#' @param joint If 1, indicates that the probabilities are based on the joint
-#'   distribution function.
-#' @param parYes if set to 1, the code is run in parallel.
-#'
-#' @section Notes:
-#' For unequal vector lengths, values are recycled. For random draws,
-#' inadmissible values return NA. For a standard LBA with normally
-#' distributed drifts, the distribution is truncated so that drift
-#' rates will only be positive.
-#'
-#' @section References:
-#' Brown, S. D., & Heathcote, A. (2008). The simplest complete model of
-#'   choice response time: Linear ballistic accumulation. Cognitive
-#'   psychology, 57(3), 153-178.
-#' Terry, A., Marley, A. A. J., Barnwal, E.-J., Wagenmakers, Heathcote,
-#'   A., & Brown, S. D. (2015). Generalising the drift rate distribution
-#'   for linear ballistic accumulators. Journal of Mathematical
-#'   Psychology, 68, 49 - 58.
-#' Singman, H., Brown, S., Gretton, M., Heathcote, A., Voss, A.,
-#'   Voss, J., & Terry, A. (2016). rtdists: Response Time
-#'   Distributions.  R package version 0.6-6.
-#'
-#' @examples
-#' Forthcoming
-#'
-#' @export
-rlba <- function(N, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl = 0L, ver = 0L) {
-    .Call('_seqmodels_rlba', PACKAGE = 'seqmodels', N, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ver)
-}
-
-#' @rdname rlba
-#' @export
-dlba <- function(rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl = 0.0, ln = 0L, ver = 0L) {
-    .Call('_seqmodels_dlba', PACKAGE = 'seqmodels', rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ln, ver)
-}
-
-#' @rdname rlba
-#' @export
-plba <- function(rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl = 0.0, ver = 0.0, parYes = 1L) {
-    .Call('_seqmodels_plba', PACKAGE = 'seqmodels', rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau0, rl, ver, parYes)
 }
 
 #' The Levy Distribution
@@ -521,7 +209,7 @@ plba <- function(rt, ch, A1, b1, alpha1, beta1, tau1, A0, b0, alpha0, beta0, tau
 #' qlevy( p = .5, mu = 0.0, sigma = 1.0 )
 #'
 #' # Simulations
-#' sim = rlevy( n = 1000, mu = 0.0, sigma = 1.0 )
+#' sim <- rlevy( n = 1000, mu = 0.0, sigma = 1.0 )
 #'
 #' @export
 dlevy <- function(x, mu, sigma, ln = FALSE) {
@@ -632,49 +320,49 @@ rlevy <- function(n, mu, sigma) {
 #' minvgauss( kappa = 1.0, xi = 1.0, tau = 0.3 )
 #'
 #' # Simulation (No shift)
-#' sim = rinvgauss( 1000, kappa = 0.8, xi = 2.0 )
+#' sim <- rinvgauss( 1000, kappa = 0.8, xi = 2.0 )
 #'
 #' # Function to obtain maximum likelihood estimates
-#' param_est = function( dat, tau_hat = 0 ) {
+#' param_est <- function( dat, tau_hat = 0 ) {
 #'   # Estimate threshold and drift from first two moments of
 #'   # data (Heathcote, 2004):
-#'   dat = dat - tau_hat # Apply shift
-#'   xi_hat = sqrt( mean( dat )/var( dat ) );
-#'   kappa_hat = xi_hat * mean( dat )
+#'   dat <- dat - tau_hat # Apply shift
+#'   xi_hat <- sqrt( mean( dat )/var( dat ) );
+#'   kappa_hat <- xi_hat * mean( dat );
 #'   return( c( kappa = kappa_hat, xi = xi_hat, tau = tau_hat ) )
 #' }
 #' print( param_est( sim ) )
 #'
 #' # Non-zero shift parameter
-#' sim = rinvgauss( 1000, kappa = 1.6, xi = 1.5, tau = .3 )
+#' sim <- rinvgauss( 1000, kappa = 1.6, xi = 1.5, tau = .3 )
 #'
 #' # Estimating shift parameter
 #'
 #' # Function to compute sum of log-likelihoods
-#' f = function( tau_hat, dat ) {
+#' f <- function( tau_hat, dat ) {
 #'   prm = param_est( dat, tau_hat = tau_hat )
 #'   sll = sum( dinvgauss( dat, prm[1], prm[2], tau = prm[3], ln = T ) )
 #'   return( sll )
 #' }
-#' tau_hat = optimize( f, c( 0.0, min( sim ) ), dat = sim, maximum = T )
+#' tau_hat <- optimize( f, c( 0.0, min( sim ) ), dat = sim, maximum = T )
 #' print( param_est( sim, tau_hat = tau_hat$maximum ) )
 #'
 #' # Plotting
 #' layout( matrix( 1:4, 2, 2, byrow = T ) )
 #' # Parameters
-#' prm = c( k = 0.8, x = 1.6, t = 0.3, s = 1.0 )
+#' prm <- c( k = 0.8, x = 1.6, t = 0.3, s = 1.0 )
 #' # Density
-#' obj = quickdist( 'sig', 'PDF', prm )
+#' obj <- quickdist( 'sig', 'PDF', prm )
 #' plot( obj ); lines( obj )
 #' # CDF
-#' obj = quickdist( 'sig', 'CDF', prm )
+#' obj <- quickdist( 'sig', 'CDF', prm )
 #' plot( obj ); lines( obj )
 #' # Quantiles
-#' obj = quickdist( 'sig', 'QF', prm, x = seq( .2, .8, .2 ) )
+#' obj <- quickdist( 'sig', 'QF', prm, x = seq( .2, .8, .2 ) )
 #' plot( obj ); prb = seq( .2, .8, .2 )
 #' abline( h = prb, lty = 2 ); lines( obj, type = 'b', pch = 19 )
 #' # Hazard function
-#' obj = quickdist( 'sig', 'HF', prm )
+#' obj <- quickdist( 'sig', 'HF', prm )
 #' plot( obj ); lines( obj )
 #'
 #' @export
@@ -704,157 +392,6 @@ qinvgauss <- function(p, kappa, xi, tau = as.numeric( c(0.0)), sigma = as.numeri
 #' @export
 minvgauss <- function(kappa, xi, tau = as.numeric( c(0.0)), sigma = as.numeric( c(1.0))) {
     .Call('_seqmodels_minvgauss', PACKAGE = 'seqmodels', kappa, xi, tau, sigma)
-}
-
-#' The Wald Race Model
-#'
-#' Random generation, density, distribution, and quantile functions for
-#' a two accumulator version of the Wald (or{ diffusion) race model
-#' (Logan et al., 2014). For the racer representing the 1st choice,
-#' \code{k1} is the threshold towards which evidence accumulates,
-#' \code{x1} is the rate of evidence accumulation, \code{t1} is
-#' the residual latency (the non-decision process), and \code{s1}
-#' is the within-trial variability (coefficient of drift).
-#' The racer representing the second choice has equivalent parameters
-#' marked with '0'.
-#'
-#' @param n the number of draws for random generation.
-#' @param rt a vector of responses times ( rt > 0 ).
-#' @param p a vector of probabilities.
-#' @param ch a vector of accuracy/choice values ( ch = {0,1} ).
-#' @param k1 the threshold determining when a decision terminates for
-#'   choices coded as 1 ( \code{k1} > 0).
-#' @param x1 the average rate of evidence accumulation within a trial
-#'   for choices coded as 1 (\code{x1} \eqn{\ge} 0).
-#' @param t1 the residual latency for choices coded as 1
-#'   (\code{t1} \eqn{\ge} 0).
-#' @param k0 the threshold determining when a decision terminates for
-#'   choices coded as 0 ( \code{k1} > 0).
-#' @param x0 the average rate of evidence accumulation within a trial
-#'   for choices coded as 0 (\code{x1} \eqn{\ge} 0).
-#' @param t0 the residual latency for choices coded as 0
-#'   (\code{t0} \eqn{\ge} 0).
-#' @param s1 the within trial variability for choices coded as 1
-#'   (\code{s1} > 0).
-#' @param s0 the within trial variability for choices coded as 0
-#'   (\code{s0} > 0).
-#' @param rl logical; if \code{TRUE}, the residual latency shifts
-#'   the finishing times for each racer before they are compared.
-#'   Otherwise, the residual latency shifts the winning finishing
-#'   times.
-#' @param ln logical; if \code{TRUE}, probabilities are given as
-#'   log(p).
-#' @param lower_tail logical; if \code{TRUE} (default), probabilities
-#'   are \eqn{P(X \le x)} otherwise \eqn{P( X > x)}.
-#' @param bounds upper limit of the quantiles to explore
-#'   for the approximation via linear interpolation.
-#' @param em_stop the maximum number of iterations to attempt to
-#'   find the quantile via linear interpolation.
-#' @param err the number of decimals places to approximate the
-#'   cumulative probability during estimation of the quantile function.
-#' @param parYes logical; if \code{TRUE} the code is run in parallel.
-#'
-#' @section Details:
-#' The Wald (or diffusion) race model assumes that two independent one
-#' boundary diffusion processes race each other. Whichever racer reaches
-#' its threshold first determines the choice and response time. Because
-#' of the independence, the likelihood for the Wald race model is:
-#' \deqn{ f(t,y|\alpha)*(1-F(t,y|\beta),}
-#' where \eqn{\alpha} and \eqn{\beta} are the sets of parameters for
-#' the Wald distribution describing the finishing times for the
-#' winning and losing racer respectively, and \eqn{f} and \eqn{F} refer
-#' to the density and distribution functions respectively.
-#'
-#' The distribution function is estimated using numerical integration
-#' via Gaussian quadrature.
-#'
-#' A linear interpolation approach is used to approximate the
-#' quantile function, estimating the inverse of the cumulative
-#' distribution function via an iterative procedure. When
-#' the precision of this estimate is set to 8 decimal places,
-#' the approximation will be typically accurate to about half of a
-#' millisecond.
-#'
-#' @return
-#' \code{dwaldrace} gives the density, \code{pwaldrace} approximates the
-#' distribution function, \code{qwaldrace} approximates the quantile
-#' function, and \code{rwaldrace} generates random deviates.
-#'
-#' The length of the result is determined by \code{n} for
-#' \code{rwaldrace}, and is the maximum of the length of the numerical
-#' arguments for the other functions.
-#'
-#' The numerical arguments other than \code{n} are recycled to the
-#' length of the result.
-#'
-#' @section References:
-#'
-#' Logan, G. D., Van Zandt, T., Verbruggen, F., & Wagenmakers, E. J.
-#'   (2014). On the ability to inhibit thought and action: General
-#'   and special theories of an act of control. Psychological Review,
-#'   121, 66.
-#'
-#' @examples
-#' # Density function
-#' dwaldrace( .5, c(1,0), k1 = 1.2, x1 = 2.0, t1 = .2,
-#'   k0 = 1.0, x0 = 0.8, t0 = .2 )
-#' # Distribution function
-#' pwaldrace( .5, c(1,0), k1 = 1.2, x1 = 2.0, t1 = .2,
-#'   k0 = 1.0, x0 = 0.8, t0 = .2 )
-#' # Choice probabilities
-#' pwaldrace( Inf, c(1,0), k1 = 1.2, x1 = 2.0, t1 = .2,
-#'   k0 = 1.0, x0 = 0.8, t0 = .2 )
-#' # Quantile function (Accurate to ~4 decimal places)
-#' qwaldrace( .5, c(1,0), k1 = 1.2, x1 = 2.0, t1 = .2,
-#'   k0 = 1.0, x0 = 0.8, t0 = .2 )
-#'
-#' # Simulate values
-#' sim = rwiener( n = 100, alpha = 0.8, theta = 0.6,
-#'   xi = 0.0, tau = 0.3 )
-#'
-#' # Plotting
-#' layout( matrix( 1:4, 2, 2, byrow = T ) )
-#' # Parameters
-#' prm = c( k1 = 1.2, x1 = 2.0, t1 = .2, k0 = 1.0,
-#'   x0 = 0.5, t0 = .2 )
-#' # Density
-#' obj = quickdist( 'wr', 'PDF', prm )
-#' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
-#' # CDF
-#' obj = quickdist( 'wr', 'CDF', prm )
-#' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
-#' # Quantiles
-#' obj = quickdist( 'wr', 'QF', prm, x = seq( .2, .8, .2 ) )
-#' plot( obj ); prb = seq( .2, .8, .2 )
-#' abline( h = prb, lty = 2 )
-#' # Conditional, not joint
-#' lines( obj, type = 'b', pch = 19, weight = 1 )
-#' lines( obj, ch = 0, type = 'b', pch = 17, lty = 2, weight = 1 )
-#' # Hazard function
-#' obj = quickdist( 'wr', 'HF', prm )
-#' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
-#'
-#' @export
-rwaldrace <- function(n, k1, x1, t1, k0, x0, t0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = FALSE, parYes = FALSE) {
-    .Call('_seqmodels_rwaldrace', PACKAGE = 'seqmodels', n, k1, x1, t1, k0, x0, t0, s1, s0, rl, parYes)
-}
-
-#' @rdname rwaldrace
-#' @export
-dwaldrace <- function(rt, ch, k1, x1, t1, k0, x0, t0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = FALSE, ln = FALSE, parYes = TRUE) {
-    .Call('_seqmodels_dwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, x1, t1, k0, x0, t0, s1, s0, rl, ln, parYes)
-}
-
-#' @rdname rwaldrace
-#' @export
-pwaldrace <- function(rt, ch, k1, x1, t1, k0, x0, t0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = FALSE, ln = FALSE, lower_tail = TRUE, parYes = TRUE) {
-    .Call('_seqmodels_pwaldrace', PACKAGE = 'seqmodels', rt, ch, k1, x1, t1, k0, x0, t0, s1, s0, rl, ln, lower_tail, parYes)
-}
-
-#' @rdname rwaldrace
-#' @export
-qwaldrace <- function(p, ch, k1, x1, t1, k0, x0, t0, s1 = as.numeric( c(1.0)), s0 = as.numeric( c(1.0)), rl = FALSE, bounds = 3.0, em_stop = 20, err = 1e-8, parYes = TRUE) {
-    .Call('_seqmodels_qwaldrace', PACKAGE = 'seqmodels', p, ch, k1, x1, t1, k0, x0, t0, s1, s0, rl, bounds, em_stop, err, parYes)
 }
 
 #' @useDynLib seqmodels
@@ -960,32 +497,37 @@ NULL
 #' pwiener( rt = Inf, ch = c( 1, 0 ), alpha = 1.6, theta = 0.5,
 #'   xi = 1.0, tau = 0.3 )
 #' # Quantile function (Accurate to ~4 decimal places)
-#' round( qwiener( p = .3499, ch = c( 1, 0 ), alpha = 1.6, theta = 0.5,
+#' round( qwiener( p = .3499, ch = 1, alpha = 1.6, theta = 0.5,
 #'   xi = 1.0, tau = 0.3 ), 4 )
-#'
+#' # For quantiles based on joint distribution, re-weight input 'p'
+#' # based on choice probabilities
+#' prob <- pwiener( rt = Inf, ch = c( 1, 0 ), alpha = 1.6, theta = 0.5,
+#'   xi = 1.0, tau = 0.3 )
+#' round( qwiener( p = .3499 * prob, ch = c( 1, 0), alpha = 1.6,
+#'   theta = 0.5, xi = 1.0, tau = 0.3 ), 4 )
 #' # Simulate values
-#' sim = rwiener( n = 100, alpha = 0.8, theta = 0.6,
+#' sim <- rwiener( n = 100, alpha = 0.8, theta = 0.6,
 #'   xi = 0.0, tau = 0.3 )
 #'
 #' # Plotting
 #' layout( matrix( 1:4, 2, 2, byrow = T ) )
 #' # Parameters
-#' prm = c( a = 1.2, z = .4, v = 1.0, t0 = 0.3 )
+#' prm <- c( a = 1.2, z = .4, v = 1.0, t0 = 0.3 )
 #' # Density
-#' obj = quickdist( 'wp', 'PDF', prm )
+#' obj <- quickdist( 'wp', 'PDF', prm )
 #' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
 #' # CDF
-#' obj = quickdist( 'wp', 'CDF', prm )
+#' obj <- quickdist( 'wp', 'CDF', prm )
 #' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
 #' # Quantiles
-#' obj = quickdist( 'wp', 'QF', prm, x = seq( .2, .8, .2 ) )
+#' obj <- quickdist( 'wp', 'QF', prm, x = seq( .2, .8, .2 ) )
 #' plot( obj ); prb = seq( .2, .8, .2 )
 #' abline( h = prb, lty = 2 )
 #' # Conditional, not joint
 #' lines( obj, type = 'b', pch = 19, weight = 1 )
 #' lines( obj, ch = 0, type = 'b', pch = 17, lty = 2, weight = 1 )
 #' # Hazard function
-#' obj = quickdist( 'wp', 'HF', prm )
+#' obj <- quickdist( 'wp', 'HF', prm )
 #' plot( obj ); lines( obj ); lines( obj, ch = 0, lty = 2 )
 #'
 #' @export

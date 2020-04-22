@@ -67,10 +67,11 @@ Lookup - 04:  rlevy
 //' qlevy( p = .5, mu = 0.0, sigma = 1.0 )
 //'
 //' # Simulations
-//' sim = rlevy( n = 1000, mu = 0.0, sigma = 1.0 )
+//' sim <- rlevy( n = 1000, mu = 0.0, sigma = 1.0 )
 //'
 //' @export
 // [[Rcpp::export]]
+
 Rcpp::NumericVector dlevy ( Rcpp::NumericVector x,
                             Rcpp::NumericVector mu,
                             Rcpp::NumericVector sigma,

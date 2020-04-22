@@ -174,9 +174,9 @@ inline double qwiener_scl( std::vector<double> par ) {
   par[5]  = residual latency
   par[6]  = coefficient of drift
   par[7]  = precision
-  par[8] = Indicator for whether joint or conditional
+  par[8]  = Indicator for whether joint or conditional
   par[9]  = Maximum quantile to explore
-  par[10]  = Maximum number of iterations to attempt
+  par[10] = Maximum number of iterations to attempt
   par[11] = Precision for inverse CDF approximation
   Returns:
   An estimated quantile.

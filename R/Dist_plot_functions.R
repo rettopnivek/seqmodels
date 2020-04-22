@@ -12,6 +12,7 @@
 # Lookup - 07:  dist_we
 # Lookup - 08:  dist_ln
 # Lookup - 09:  dist_b
+# Lookup - 10:  dist_exp
 
 # Lookup - 01
 dist_emg = function( prm, type, x, b ) {
@@ -165,129 +166,7 @@ dist_sig = function( prm, type, x, b ) {
 }
 
 # Lookup - 03
-dist_wr = function( prm, type, x, b ) {
-  # Purpose:
-  # Computes a specified function over a range of values
-  # for the wald race model.
-  # Arguments:
-  # prm  - A vector of 0-9 parameters
-  # type - The type of function to compute
-  # x    - An optional vector of values over which to compute
-  #        the function
-  # b    - An optional vector giving the range of values over
-  #        which to compute the function
-  # Returns:
-  # A list with the x and y-axis values for the joint density,
-  # distribution, quantile, and conditional hazard functions.
-
-  # Initialize output
-  out = list(
-    d_pv = NULL,
-    p_pv = NULL,
-    q_pv = NULL,
-    h_pv = NULL
-  )
-
-  # Define default values
-  dv = c( k1 = 1.0, x1 = 2.5, t1 = 0.2,
-          k0 = 1.0, x0 = 2.5, t0 = 0.2,
-          s1 = 1.0, s0 = 1.0, rl = 0 )
-
-  p = prm_create( dv, prm )
-  ver = check_version( type )
-  x = create_x( x, b, ver )
-  out$type = ver
-  out$prm = p
-  out$dist = 'wr'
-  out$ch = 2
-  out$p1 = pwaldrace( Inf, ch = 1,
-                      k1 = p[1], x1 = p[2], t1 = p[3],
-                      k0 = p[4], x0 = p[5], t0 = p[6],
-                      s1 = p[7], s0 = p[8], rl = p[9] )
-
-  # Truncate x to be within support
-  x = x[ x >= 0 ]
-
-  # Density
-  if ( ver == 1 ) {
-    out$d_pv = list( x = x,
-                     y1 = dwaldrace(
-                       rt = x, ch = 1,
-                       k1 = p[1], x1 = p[2], t1 = p[3],
-                       k0 = p[4], x0 = p[5], t0 = p[6],
-                       s1 = p[7], s0 = p[8], rl = p[9] ),
-                     y0 = dwaldrace(
-                       rt = x, ch = 0,
-                       k1 = p[1], x1 = p[2], t1 = p[3],
-                       k0 = p[4], x0 = p[5], t0 = p[6],
-                       s1 = p[7], s0 = p[8], rl = p[9] )
-    )
-  }
-  # Distribution function
-  if ( ver == 2 ) {
-    out$p_pv = list( x = x,
-                     y1 = pwaldrace(
-                       rt = x, ch = 1,
-                       k1 = p[1], x1 = p[2], t1 = p[3],
-                       k0 = p[4], x0 = p[5], t0 = p[6],
-                       s1 = p[7], s0 = p[8], rl = p[9] ),
-                     y0 = pwaldrace(
-                       rt = x, ch = 0,
-                       k1 = p[1], x1 = p[2], t1 = p[3],
-                       k0 = p[4], x0 = p[5], t0 = p[6],
-                       s1 = p[7], s0 = p[8], rl = p[9] )
-    )
-  }
-  # Quantile function
-  if ( ver == 3 ) {
-    out$q_pv = list( y = x,
-                     x1 = qwaldrace(
-                       p = x, ch = 1,
-                       k1 = p[1], x1 = p[2], t1 = p[3],
-                       k0 = p[4], x0 = p[5], t0 = p[6],
-                       s1 = p[7], s0 = p[8], rl = p[9] ),
-                     x0 = qwaldrace(
-                       p = x, ch = 0,
-                       k1 = p[1], x1 = p[2], t1 = p[3],
-                       k0 = p[4], x0 = p[5], t0 = p[6],
-                       s1 = p[7], s0 = p[8], rl = p[9] )
-    )
-  }
-  # Hazard function
-  if ( ver == 4 ) {
-    k = pwaldrace(
-      rt = Inf, ch = 1,
-      k1 = p[1], x1 = p[2], t1 = p[3],
-      k0 = p[4], x0 = p[5], t0 = p[6],
-      s1 = p[7], s0 = p[8], rl = p[9] )
-    d1 = dwaldrace(
-      rt = x, ch = 1,
-      k1 = p[1], x1 = p[2], t1 = p[3],
-      k0 = p[4], x0 = p[5], t0 = p[6],
-      s1 = p[7], s0 = p[8], rl = p[9] )/k
-    d0 = dwaldrace(
-      rt = x, ch = 0,
-      k1 = p[1], x1 = p[2], t1 = p[3],
-      k0 = p[4], x0 = p[5], t0 = p[6],
-      s1 = p[7], s0 = p[8], rl = p[9] )/(1-k)
-    p1 = pwaldrace(
-      rt = x, ch = 1,
-      k1 = p[1], x1 = p[2], t1 = p[3],
-      k0 = p[4], x0 = p[5], t0 = p[6],
-      s1 = p[7], s0 = p[8], rl = p[9] )/k
-    p0 = pwaldrace(
-      rt = x, ch = 0,
-      k1 = p[1], x1 = p[2], t1 = p[3],
-      k0 = p[4], x0 = p[5], t0 = p[6],
-      s1 = p[7], s0 = p[8], rl = p[9] )/(1-k)
-    out$h_pv = list( x = x,
-                     y1 = d1/(1-p1),
-                     y0 = d0/(1-p0)
-    )
-  }
-
-  return( out )
-}
+# FORTHCOMING
 
 # Lookup - 04
 dist_wp = function( prm, type, x, b ) {
@@ -775,7 +654,7 @@ dist_b = function( prm, type, x, b ) {
   x = create_x( x, b, ver )
   out$type = ver
   out$prm = p
-  out$dist = 'n'
+  out$dist = 'b'
   out$ch = 1
 
   # Truncate x to be within support
@@ -822,3 +701,77 @@ dist_b = function( prm, type, x, b ) {
 
   return( out )
 }
+
+# Lookup - 10
+dist_exp = function( prm, type, x, b ) {
+  # Purpose:
+  # Computes a specified function over a range of values
+  # for the exponential function.
+  # Arguments:
+  # prm  - A vector of 1 parameter
+  # type - The type of function to compute
+  # x    - An optional vector of values over which to compute
+  #        the function
+  # b    - An optional vector giving the range of values over
+  #        which to compute the function
+  # Returns:
+  # A list with the x and y-axis values for the density,
+  # distribution, quantile, and hazard functions.
+
+  # Initialize output
+  out = list(
+    d_pv = NULL,
+    p_pv = NULL,
+    q_pv = NULL,
+    h_pv = NULL
+  )
+
+  # Define default values
+  dv = c( r = 1 )
+
+  p = prm_create( dv, prm )
+  ver = check_version( type )
+  x = create_x( x, b, ver )
+  out$type = ver
+  out$prm = p
+  out$dist = 'exp'
+  out$ch = 1
+
+  # Density
+  if ( ver == 1 ) {
+    out$d_pv = list( x = x,
+                     y = dexp(
+                       x = x,
+                       rate = p[1] )
+    )
+  }
+  # Distribution function
+  if ( ver == 2 ) {
+    out$p_pv = list(
+      x = x,
+      y = pexp(
+        q = x,
+        rate = p[1] )
+    )
+  }
+  # Quantile function
+  if ( ver == 3 ) {
+    out$q_pv = list(
+      y = x,
+      x = qexp(
+        p = x,
+        rate = p[1] )
+    )
+  }
+  # Hazard function
+  if ( ver == 4 ) {
+    d = dexp( x = x, rate = p[1] )
+    p = pexp( q = x, rate = p[1] )
+    out$h_pv = list(
+      x = x,
+      y = d/(1-p) )
+  }
+
+  return( out )
+}
+
