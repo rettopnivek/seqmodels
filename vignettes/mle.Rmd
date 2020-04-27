@@ -1,0 +1,555 @@
+---
+title: "Maximum Likelihood Estimation"
+author: "Kevin Potter"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Maximum Likelihood Estimation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library( seqmodels )
+```
+
+## Overview
+
+This vignette walks through an example of...
+
+* Simulating data using the random generation functions in 'seqmodels';
+* Defining functions that can be passed into R's base optimization routine in order to carry out maximum likelihood (ML) estimation;
+* Three demonstrations of ML estimation:
+    * ML estimation using pre-defined starting values;
+    * ML estimation with multiple iterations of randomly-generated starting values;
+    * ML estimation with a robust mixture model to handle outliers in data.
+
+This example will use the functions for the shifted inverse Gaussian (or Wald) distribution, but the approaches detailed here can be extended to use the random generation and density functions available in R and other packages.
+
+## Simulating data
+
+To demonstrate ML estimation, we will first simulate data from the shifted inverse Gaussian distribution to subsequently fit:
+
+```{r}
+# Define generating parameters
+gp <- c(
+  k = 1.5, # Threshold
+  x = 1, # Drift rate
+  t = .3 # Shfit
+)
+# Sample size
+N = 100
+# Set seed for reproducibility
+set.seed( 487 )
+
+# Simulate data
+sim <- rinvgauss( N, kappa = gp['k'], xi = gp['x'], tau = gp['t'] )
+```
+
+We can visually compare the empirical distribution of the simulated data against the actual distribution using the 'quickdist' function provided in the 'seqmodels' package:
+
+```{r}
+# Estimate empirical density, and extract values 
+# for each observed point
+ed <- density( sim )
+af <- approxfun(ed); y <- af( sort( sim ) )
+
+# Create a 'quickdist' object for the generating distribution
+sig_plot <- quickdist( 'Wald', type = 'PDF', prm = gp, b = c( 0, 5, 100 ) )
+
+# Plot generating distribution and 
+# overlay empirical density for simulated data
+plot( sig_plot ); lines( sig_plot ); points( sort( sim ), y, pch = 19 )
+```
+
+## ML estimation functions
+
+When conducting ML estimation, an important first step is to consider the range of acceptable values that parameters can take. For example, with the shifted inverse Gaussian distribution, the threshold and drift rate paramters must be greater than 0, and the shift parameter must lie between zero and the smallest observed time.
+
+Unfortunately, most optimization routines, by default, will consider unbounded values (i.e., from -Infinity to +Infinity). There are several ways to solve this. Here, we will define a function to transform these unbounded values to lie within the appropriate ranges:
+
+```{r}
+# Define function to restrict unbounded values 
+# within support required by inverse Gaussian distribution
+transform_param <- function( param, min_x, restrict = T ) {
+  # param    - A vector with the parameter values for 
+  #            'k' (threshold), 'x' (drift rate), and 
+  #            't' (shift)
+  # min_x    - Lowest observed value in the data
+  # restrict - Logical; if TRUE, restricts unbounded 
+  #            values, otherwise reverses the transformations
+  
+  # Initialize output
+  out <- param
+  
+  if ( restrict ) {
+    # Threshold (kappa) must be greater than 0
+    # so use exponential transform
+    out[1] <- exp( out[1] )
+    
+    # Drift rate (xi) must be greater than 0
+    # so use exponential transform
+    out[2] <- exp( out[2] )
+    
+    # Shift (tau) must lie between 0 and smallest 
+    # observed value in data, so use the inverse 
+    # logit multiplied by the smallest observed value
+    out[3] <- 1/( 1 + exp(-out[3]) )
+    out[3] <- out[3] * min_x
+    
+  } else {
+    # Reverse transformations
+    out[1] <- log( out[1] )
+    out[2] <- log( out[2] )
+    out[3] <- out[3] / min_x
+    out[3] <- log( out[3] / ( 1 - out[3] ) )
+  }
+  
+  return( out )
+}
+```
+
+Next, we will define a function to compute the sum of the log-likelihoods that we can then pass into an optimization routine. We will structure the format of the function around what is required by base R's 'optim' function:
+
+```{r}
+# Define function to compute sum of the log-likelihoods
+sll <- function( param, x ) {
+  # param - A vector with the parameter values for 
+  #         'k' (threshold), 'x' (drift rate), and 
+  #         't' (shift)
+  # x     - A vector of data (all x > 0)
+  
+  # Restrict inputs to required ranges for 
+  # inverse Gaussian parameters
+  p <- transform_param( param, min( x ) )
+  
+  # Compute log-likelihood
+  ll <- dinvgauss( x, kappa = p[1], xi = p[2], tau = p[3], ln = T )
+  
+  # Compute sum of the log-likelihoods
+  out <- sum( ll )
+  
+  # If inadmissable values or issues arise, return -Infinity
+  # (i.e., no information)
+  if ( is.na( out ) ) out <- -Inf
+  
+  return( out )
+}
+```
+
+Finally, we will define a function to extract standard errors and uncertainty intervals for the ML estimates. The base R function 'optim' can numerically compute the Hessian matrix, which can then be used to compute the standard errors:
+
+```{r}
+ML_SE_and_UI <- function( est, width = .95, 
+                          transform_param = NULL, ... ) {
+  # est             - Output from the 'optim' function assuming that 
+  #                   the option 'hessian' was set to true and the 
+  #                   control parameter 'fnscale' was set to -1
+  # width           - Width of the uncertainty interval
+  # transform_param - An optional function to rescale parameter 
+  #                   estimates
+  # ...             - Additional parameters for the 'transform_param' 
+  #                   function
+  
+  # Compute Fisher's information matrix
+  # (inverse of negative of hessian)
+  fisher_info <- solve( -ml_estimates$hessian )
+
+  # Compute standard errors
+  SE <- sqrt( diag( fisher_info ) )
+  
+  # Lower and upper limit for uncertainty interval
+  interval = .5 + width*c( -.5, .5 )
+  
+  # Uncertainty intervals
+  UI <- rbind(
+    Lower = ml_estimates$par + qnorm( interval[1] )* SE,
+    upper = ml_estimates$par + qnorm( interval[2] )* SE
+  )
+  
+  # Save output
+  out <- list(
+    SE = SE,
+    UI = t( UI )
+  )
+  
+  # If specified, rescale uncertainty intervals
+  if ( !is.null( transform_param ) ) {
+    UI <- apply( UI, 1, transform_param, ... )
+    out$UI <- UI
+  }
+  
+  colnames( out$UI ) = c(
+    paste0( 'Q_', interval[1] ),
+    paste0( 'Q_', interval[2] )
+  )
+  
+  return( out )
+}
+```
+
+## Two examples of ML estimation
+
+To conduct ML estimation using R, we will use base R's 'optim' function. This function requires a set of starting parameter values and a function to compute the value to minimize or maximize.
+
+Two methods for inputting starting values are shown:
+1. A set of pre-defined values are passed in to the 'optim' function;
+2. Starting values are randomly generated, and multiple iterations are run as a way to check that a global maximum has been reached.
+
+#### Pre-defined starting values
+
+Selection of starting values in this example is straightfoward, as the true generating parameters are known. As a slightly more realistic scenario, the starting values for the threshold, drift, and shift parameters were arbitrarily set to 1, 1, and .15, respectively.
+
+Note, however, the choice of starting values is important for optimization routines: good choices can help a routine find a global maximum quickly, while poor choices can result in slow estimation, or worse, inflate the risk of selecting a local maximum instead. It is worth taking some time to compare the empirical density and predicted densitiies based on the starting values to ensure that estimation can proceed normally.
+
+Another important step is to remember that the parameter inputs will be transformed - therefore, after defining our starting values, we need to transform the inputs appropriately. For this reason, the previously defined 'transform_param' function includes an option 'restrict', that, if set to FALSE, reverses the transformationL:
+
+```{r}
+# Define starting parameter values
+starting_param <- c( k = 1, x = 1, t = .15 )
+# Convert values to unbounded format 
+# for direct passing into the 'sll' function
+starting_param <- transform_param( 
+  starting_param, 
+  min( sim ), 
+  restrict = F
+)
+```
+
+With our starting values specified and properly transformed, we can now use base R's 'optim' function to conduct ML estimation:
+
+```{r}
+ml_estimates <- optim(
+  # Starting parameter values
+  par = starting_param,
+  # Function to compute sum of the log-likelihoods
+  fn = sll,
+  # Additional input to the 'sll'
+  x = sim,
+  # The optimization algorithm to use ('Nelder-Mead',
+  # the default, is another good alternative)
+  method = 'BFGS',
+  # By default, 'optim' performs minimization and 
+  # runs only up to 500 iterations before stopping; 
+  # therefore, we will set it instead to perform 
+  # maximization and run up to 10,000 iterations 
+  # before stopping
+  control = list(
+    fnscale = -1,
+    maxit = 1e4
+  ),
+  # We will have the function return the Hessian 
+  # matrix so that we can compute standard errors 
+  # later on
+  hessian = T
+)
+```
+
+Once the optimization algorithm finishes, we can again transform the unbounded estimates back to the correct scale, and we will have our ML estimates:
+
+```{r}
+# Convert raw estimates to proper scale
+est <- transform_param( ml_estimates$par, min( sim ) )
+# Examine estimates
+print( round( est, 2 ) )
+# Compare against generating parameters
+print( gp )
+```
+
+We can also use our previously defined function to compute standard errors and 95% uncertainty intervals:
+
+```{r}
+se_and_ui <- ML_SE_and_UI(
+  ml_estimates, 
+  width = .95,
+  transform_param = transform_param, 
+  min_x = min( sim )
+)
+# Standard errors
+print( round( se_and_ui$SE, 2 ) )
+# 95% uncertainty intervals
+print( round( se_and_ui$UI, 2 ) )
+# True generating values
+print( gp )
+```
+
+As seen, our uncertainty intervals overlap with the true generating values.
+
+#### Randomly generated starting values
+
+As noted earlier, the set of starting values can impact the resulting estimation, with poor choices making it more likely to get stuck in a local maximum rather than a global maximum. To avoid arbitrary selection of starting values, one approach is to run the estimation process multiple times, using randomly generated starting values at each point. You can then compare the resulting estimates to see if they are similar.
+
+Of course, one risk of random generation is the possibility that inappropriate estimates will be selected (e.g., a shift parameter greater than the shortest observed time). Therefore, it can also be helpful to implement error-handling to ensure the estimation process will not terminate early due to errors.
+
+```{r}
+# Initialize matrix to store starting values 
+# and resulting estimates
+est_check <- matrix( NA, 10, 6 )
+# Label columns
+colnames( est_check ) <- c(
+  paste0( 'start.', c( 'k', 'x', 't' ) ),
+  paste0( 'est.', c( 'k', 'x', 't' ) )
+)
+
+# Set seed for reproducibility
+set.seed( 4884 )
+
+# Loop over each row
+for ( i in 1:nrow( est_check ) ) {
+  
+  # Generate random starting values from a uniform
+  # distribution
+  cur_start <- runif(
+    3, # Number of values to generate
+    c( .25, .25, .01 ), # Lower limit for range
+    c( 3,   3,   .8  )  # Upper limit for range
+  )
+  # Note here the upper limit for the shift parameter 
+  # has been purposefully set to be too high, to 
+  # demonstrate the error handling approach
+  
+  # Save results
+  est_check[i,1:3] = cur_start
+  
+  # Properly scale starting values
+  cur_start <- transform_param( cur_start, min( sim ), restrict = F )
+  
+  # Use R's built-in error handling to 
+  # prevent hang-ups
+  cur_est <- tryCatch(
+    optim(
+      par = cur_start,
+      fn = sll,
+      x = sim,
+      method = 'BFGS',
+      control = list(
+        fnscale = -1,
+        maxit = 1e4
+      )
+    ),
+    # If the estimation fails, return 
+    # NULL
+    error = function(e) return( NULL )
+  )
+  
+  # If estimation succeeded, extract 
+  # parameter estimates
+  if ( !is.null( cur_est ) ) {
+    est_check[i,4:6] <- transform_param(
+      cur_est$par,
+      min( sim )
+    )
+  }
+  
+}
+
+# Number of failed estimation attempts
+print( sum( is.na( est_check[,'est.k'] ) ) )
+
+# Remove rows corresponding to failed estimation 
+# attempts
+est_check <- est_check[ !is.na( est_check[,'est.k'] ), ]
+
+# Compare estimates over different starting values
+print( round( est_check[,4:6], 3 ) )
+# The estimates are extemely similar, suggesting we 
+# have found a global maximum
+```
+
+## Robust estimation of the shift parameter
+
+A common challenge facing researchers when working with actual data is the presence of outliers. With response time data, for example, often there can be excessively fast and slow responses, due to subjects, for example, mistiming the start of the trial or getting distracted and responding too slowly. Unfortunately, such outliers can negatively impact ML estimates, typically leading to under-estimation of possiby all three parameters.
+
+Let us simulate a larger amount of data:
+```{r}
+# Set seed for reproducibility
+set.seed( 866 )
+
+# Replace 10% of observations with noise
+sim_mix <- sim
+index <- 1:N
+bad_data <- sample( index, size = round( .1*N ) )
+sim_mix[ bad_data ] = runif( length( bad_data ),  0, 12)
+
+# Compare ranges of original data versus 
+# noisy data
+print( range( sim ) )
+print( range( sim_mix ) )
+```
+
+Now when we attempt ML estimation, our resulting estimates are biased relative to the generating parameters. The shift parameter is essentialy zero, while the drift rate is lower and the threshold higher than expected. This bias is the result of the estimation algorithm needing to set the shfit lower than the shortest observed time, and needing to adjust the threshold and drift to handle the increased variance due to adding noise. Examination of the uncertainty intervals reveals that the interval for the shift parameter is extremely wide, while the interval for drift rate no longer overlaps with the corresponding generating parameter.
+
+```{r}
+starting_param <- c( k = 1, x = 1, t = .05 )
+starting_param <- transform_param( 
+  starting_param, 
+  min( sim_mix ), 
+  restrict = F
+)
+
+ml_estimates <- optim(
+  par = starting_param,
+  fn = sll,
+  x = sim_mix,
+  method = 'BFGS',
+  control = list(
+    fnscale = -1,
+    maxit = 1e4
+  ),
+  hessian = T
+)
+
+# Estimates are quite different relative to 
+# generating parameters
+est <- transform_param( ml_estimates$par, min( sim_mix ) )
+print( round( est, 2 ) )
+print( gp )
+
+# 95% uncertainty intervals
+ui <- ML_SE_and_UI(
+  ml_estimates, 
+  width = .95,
+  transform_param = transform_param, 
+  min_x = min( sim )
+)$UI
+print( round( se_and_ui$UI, 2 ) )
+# True generating values
+print( gp )
+```
+
+One solution to this problem is to use a robust variant of the shifted inverse Gaussian model, by including a mixture component to handle overly fast and slow responses. This model proposes that responses arise from one of two distributions: 1) the shifted inverse Gaussian, and 2) a uniform distribution with a pre-defined range. This model requires estimation of 4 parameters, namely the three parameters for the shifted inverse Gaussian, and additionaly a mixture probability indicating the proportion of times responses were generated from the inverse Gaussian rather than the uniform distribution.
+
+We first define a new function for transforming parameters, as we no longer need to restrict the shift parameter to be smaller than the shortest time, and we must add a restriction for the mixture probability:
+
+```{r}
+transform_param_robust <- function( param, restrict = T ) {
+  # param    - A vector with the parameter values for 
+  #            'k' (threshold), 'x' (drift rate),  
+  #            't' (shift), and 'p' (mixture probability)
+  # restrict - Logical; if TRUE, restricts unbounded 
+  #            values, otherwise reverses the transformations
+  
+  # Initialize output
+  out <- param
+  
+  if ( restrict ) {
+    # Threshold (kappa) must be greater than 0
+    # so use exponential transform
+    out[1] <- exp( out[1] )
+    
+    # Drift rate (xi) must be greater than 0
+    # so use exponential transform
+    out[2] <- exp( out[2] )
+    
+    # Shift (tau) must be positive
+    out[3] <- exp( out[3] )
+    
+    # Mixture probability must lie beween 0 and 1
+    out[4] <- 1/( 1 + exp(-out[4]) )
+    
+  } else {
+    # Reverse transformations
+    out[1] <- log( out[1] )
+    out[2] <- log( out[2] )
+    out[3] <- log( out[3] )
+    out[4] <- log( out[4] / ( 1 - out[4] ) )
+  }
+  
+  return( out )
+}
+```
+
+We also define a new function to compute the sum of the log-likelihoods for the mixture distribution, which is a weighted combination of the shifted inverse Gaussian and a uniform distribution. We add two new arguments to this function: 1) a vector giving the lower and upper limits for the uniform distribution, and 2) an vector giving the parameters for a prior distribution to impose on the mixture probability.
+
+The latter argument is useful to include because it can be quite difficult to estimate mixture probabilities. For example, the estimation algorithm can easily get stuck in global maximums where the probability parameter is set to 0 or 1. Introducing a prior distribution can help ensure the estimation algorithm assigns a proper weight to the parameter. Here, we use a Beta distribution, which has the correct support for probabilities (between 0 and 1).
+
+```{r}
+sll_robust <- function( param, x, u_limits, prior_mixture ) {
+  # param         - A vector with the parameter values for 
+  #                 'k' (threshold), 'x' (drift rate),  
+  #                 't' (shift), and 'p' (mixture probability)
+  # x             - A vector of data (all x > 0)
+  # u_limits      - Lower and upper limits for uniform distribution
+  # prior_mixture - First and second shape parameter values for 
+  #                 Beta prior on mixture probability (set to
+  #                 'c( 1, 1)' for uniform prior that has no 
+  #                 impact)
+  
+  # Restrict inputs to required ranges for 
+  # inverse Gaussian parameters
+  p <- transform_param_robust( param )
+  
+  # Compute likelihood under inverse Gaussian distribution
+  ll_sig <- dinvgauss( x, kappa = p[1], xi = p[2], tau = p[3] )
+  # Compute likelihod under uniform distribution
+  ll_u <- dunif( x, u_limits[1], u_limits[2] )
+  
+  # Compute log-likelihood for mixture distribution
+  ll <- 
+  log( p[4] * ll_sig + (1 - p[4]) * ll_u ) + 
+    # Include prior on mixture probability to stabilize estimates
+    dbeta( p[4], prior_mixture[1], prior_mixture[2], log = T )
+  
+  # Compute sum of the log-likelihoods
+  out <- sum( ll )
+  
+  # If inadmissable values or issues arise, return -Infinity
+  # (i.e., no information)
+  if ( is.na( out ) ) out <- -Inf
+  
+  return( out )
+}
+```
+
+Finally, we will fit the noisy data using this new, robust model. As a first step, we need to select hyper-parameters for the Beta prior on the mixture probability. Setting the parameters to Beta(1,1) gives a non-informative uniform prior, but we can also use values like Beta(8,2), which places 95% of the mass between 52% and 97%, ensuring the mixture probability will always favor the shifted inverse Gaussian distribution.
+
+```{r}
+# Define starting parameters
+starting_param <- c( k = 1, x = 1, t = .15, p = .8 )
+starting_param <- transform_param_robust( 
+  starting_param, 
+  restrict = F
+)
+
+# Fit data using 'optim'
+ml_estimates <- optim(
+  par = starting_param,
+  fn = sll_robust,
+  x = sim_mix,
+  # Additional parameters for 'sll_robust'
+  u_limits = c( 0,12 ),
+  prior_mixture = c( 8, 2 ), 
+  method = 'BFGS',
+  control = list(
+    fnscale = -1,
+    maxit = 1e4
+  ),
+  hessian = T
+)
+
+# Estimates now much closer to generating parameters
+est <- transform_param_robust( ml_estimates$par, min( sim_mix ) )
+print( round( est, 2 ) )
+print( gp )
+
+# Uncertainty intervals overlap with generatig values
+ui <- ML_SE_and_UI( 
+  ml_estimates,
+  width = .95,
+  transform_param = transform_param_robust
+)$UI
+print( round( ui, 2 ) )
+```
+
+The robust model gave us improved estimates closer to the generating values. However, it is not without its disadvantages:
+
+* As demonstrating with the need for a prior distribution, the mixture component as a large amount of instability to estimation.
+* Furthermore, while the prior distribution can stabilize things, the results can be quite sensitive to the choice of prior values, especially when there are few data points.
+* Finally, given this instability, the uncertainty intervals for the results can be wider, reducing the power of the model.
+
+When a researcher has data that may have outliers, but has insufficient data points to consider a mixture model, tney can turn to simpler approaches such as trimming the top and bottom 2.5% of the data.
+

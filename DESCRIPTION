@@ -9,6 +9,11 @@ Description: Distribution, density, quantile, and
 Depends:
   R (>= 3.0),
   RcppParallel
+Suggests:
+  knitr,
+  rmarkdown
+VignetteBuilder: 
+    knitr
 License: MIT + License
 LazyData: true
 LinkingTo: Rcpp, RcppParallel
